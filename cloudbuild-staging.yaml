@@ -46,7 +46,7 @@ steps:
         gcloud run services describe training-backend-staging \
           --region=asia-southeast1 \
           --format='value(status.url)' > /workspace/backend_url.txt
-        echo "Backend URL: $(cat /workspace/backend_url.txt)"
+        echo "Backend URL: $$(cat /workspace/backend_url.txt)"
     id: 'get-backend-url'
     waitFor: ['deploy-backend']
 
@@ -78,7 +78,7 @@ steps:
     args:
       - '-c'
       - |
-        BACKEND_URL=$(cat /workspace/backend_url.txt)
+        BACKEND_URL=$$(cat /workspace/backend_url.txt)
         gcloud run deploy training-frontend-staging \
           --image=gcr.io/$PROJECT_ID/training-frontend-staging:$COMMIT_SHA \
           --region=asia-southeast1 \
@@ -89,7 +89,7 @@ steps:
           --cpu=1 \
           --min-instances=0 \
           --max-instances=10 \
-          --set-env-vars="BACKEND_URL=$BACKEND_URL"
+          --set-env-vars="BACKEND_URL=$$BACKEND_URL"
     id: 'deploy-frontend'
     waitFor: ['push-frontend']
 
@@ -99,19 +99,19 @@ steps:
     args:
       - '-c'
       - |
-        FRONTEND_URL=$(gcloud run services describe training-frontend-staging \
+        FRONTEND_URL=$$(gcloud run services describe training-frontend-staging \
           --region=asia-southeast1 \
           --format='value(status.url)')
-        echo "Frontend URL: $FRONTEND_URL"
+        echo "Frontend URL: $$FRONTEND_URL"
 
         # Update backend with frontend URL in CORS
         gcloud run services update training-backend-staging \
           --region=asia-southeast1 \
-          --set-env-vars="ALLOWED_ORIGINS=$FRONTEND_URL"
+          --set-env-vars="ALLOWED_ORIGINS=$$FRONTEND_URL"
 
         echo "=== STAGING DEPLOYMENT COMPLETE ==="
-        echo "Frontend: $FRONTEND_URL"
-        echo "Backend: $(cat /workspace/backend_url.txt)"
+        echo "Frontend: $$FRONTEND_URL"
+        echo "Backend: $$(cat /workspace/backend_url.txt)"
     id: 'update-cors'
     waitFor: ['deploy-frontend']
 
