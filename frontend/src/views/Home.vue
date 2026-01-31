@@ -82,53 +82,6 @@
       </div>
     </section>
 
-    <!-- Why Choose Us Section -->
-    <section class="why-us">
-      <div class="why-us-content">
-        <h2>Why Choose <span class="highlight">Training Center?</span></h2>
-        <ul class="why-list">
-          <li>
-            <span class="check">&#10003;</span>
-            <div>
-              <strong>Hands-on Training</strong>
-              <p>80% practical training with real equipment and scenarios</p>
-            </div>
-          </li>
-          <li>
-            <span class="check">&#10003;</span>
-            <div>
-              <strong>Small Class Sizes</strong>
-              <p>Maximum 20 students per batch for personalized attention</p>
-            </div>
-          </li>
-          <li>
-            <span class="check">&#10003;</span>
-            <div>
-              <strong>Modern Facilities</strong>
-              <p>State-of-the-art training labs and equipment</p>
-            </div>
-          </li>
-          <li>
-            <span class="check">&#10003;</span>
-            <div>
-              <strong>Flexible Schedule</strong>
-              <p>Day, evening, and weekend classes available</p>
-            </div>
-          </li>
-          <li>
-            <span class="check">&#10003;</span>
-            <div>
-              <strong>Career Support</strong>
-              <p>Resume writing, interview coaching, and job referrals</p>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <div class="why-us-image">
-        <img src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=500&h=600&fit=crop" alt="Training facility" />
-      </div>
-    </section>
-
     <!-- CTA Section -->
     <section class="cta">
       <div class="cta-content">
@@ -162,6 +115,50 @@ onMounted(async () => {
 <style scoped>
 .home {
   overflow-x: hidden;
+  position: relative;
+  background: linear-gradient(180deg, #f8f9ff 0%, #ffffff 50%, #f0f4ff 100%);
+}
+
+.home::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 600px;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 10%, rgba(118, 75, 162, 0.12) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.home > section {
+  position: relative;
+  z-index: 1;
+}
+
+.home::after {
+  content: '';
+  position: absolute;
+  top: 400px;
+  right: -100px;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  animation: float 8s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-30px) scale(1.05);
+  }
 }
 
 /* Hero Section */
@@ -269,8 +266,22 @@ onMounted(async () => {
 
 /* Features Section */
 .features {
-  background: #f8f9ff;
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 50%, #f0f4ff 100%);
   padding: 80px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.features::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 60%);
+  border-radius: 50%;
+  animation: float 10s ease-in-out infinite reverse;
 }
 
 .features-container {
