@@ -30,4 +30,9 @@ export const getCoursesByCategory = async (category) => {
   return response.data
 }
 
+export const getSponsors = async () => {
+  const response = await api.get('/sponsors')
+  return response.data
+}
+
 export default api

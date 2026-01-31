@@ -12,7 +12,7 @@
       <div class="nav-menu">
         <router-link to="/" class="nav-link">Home</router-link>
         <router-link to="/courses" class="nav-link">Courses</router-link>
-        <a href="#" class="nav-link">About Us</a>
+        <router-link to="/sponsors" class="nav-link">Sponsors</router-link>
         <a href="#" class="nav-link">Contact</a>
       </div>
 
@@ -31,7 +31,7 @@
     <div class="mobile-menu" :class="{ active: mobileOpen }">
       <router-link to="/" class="nav-link" @click="mobileOpen = false">Home</router-link>
       <router-link to="/courses" class="nav-link" @click="mobileOpen = false">Courses</router-link>
-      <a href="#" class="nav-link">About Us</a>
+      <router-link to="/sponsors" class="nav-link" @click="mobileOpen = false">Sponsors</router-link>
       <a href="#" class="nav-link">Contact</a>
       <div class="mobile-actions">
         <button class="btn btn-outline">Login</button>
