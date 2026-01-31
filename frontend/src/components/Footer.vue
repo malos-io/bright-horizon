@@ -43,7 +43,7 @@
         <ul class="contact-list">
           <li>123 Training Street, Manila</li>
           <li>Philippines 1000</li>
-          <li>+63 (2) 1234-5678</li>
+          <li>0995 589 2022</li>
           <li>info@trainingcenter.ph</li>
         </ul>
       </div>

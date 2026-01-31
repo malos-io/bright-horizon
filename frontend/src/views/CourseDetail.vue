@@ -37,7 +37,7 @@
 
       <div class="course-card-sticky">
         <div class="card-image">
-          <img :src="getImageUrl(course.slug)" :alt="course.title" />
+          <img :src="course.image" :alt="course.title" />
         </div>
         <div class="card-content">
           <div class="price-section">
@@ -74,9 +74,14 @@
     <div class="course-content">
       <div class="main-content">
         <!-- About Section -->
-        <section class="content-section">
+        <section class="content-section about-section">
           <h2>About This Course</h2>
-          <div class="description" v-html="formatDescription(course.description)"></div>
+          <div class="description">
+            <div class="desc-icon">
+              <span>&#128218;</span>
+            </div>
+            <div class="desc-content" v-html="formatDescription(course.description)"></div>
+          </div>
         </section>
 
         <!-- What You'll Learn -->
@@ -220,15 +225,6 @@ const formatDescription = (desc) => {
   return desc.replace(/\n\n/g, '</p><p>').replace(/^/, '<p>').replace(/$/, '</p>')
 }
 
-const getImageUrl = (slug) => {
-  const images = {
-    housekeeping: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=600&h=400&fit=crop',
-    'food-and-beverage': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop',
-    'front-office': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop',
-    caregiving: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600&h=400&fit=crop',
-  }
-  return images[slug] || 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=600&h=400&fit=crop'
-}
 </script>
 
 <style scoped>
@@ -491,6 +487,52 @@ const getImageUrl = (slug) => {
   margin-bottom: 20px;
   padding-bottom: 15px;
   border-bottom: 2px solid #f0f0f0;
+}
+
+/* About Section Enhanced */
+.about-section .description {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.desc-icon {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.desc-icon span {
+  font-size: 28px;
+  filter: grayscale(1) brightness(10);
+}
+
+.desc-content {
+  flex: 1;
+  padding-left: 24px;
+  border-left: 3px solid #667eea;
+}
+
+.desc-content p {
+  font-size: 16px;
+  color: #555;
+  line-height: 1.9;
+  margin-bottom: 16px;
+}
+
+.desc-content p:first-child {
+  font-size: 17px;
+  color: #333;
+  font-weight: 500;
+}
+
+.desc-content p:last-child {
+  margin-bottom: 0;
 }
 
 .description p {
@@ -794,6 +836,25 @@ const getImageUrl = (slug) => {
 
   .content-section {
     padding: 20px;
+  }
+
+  .about-section .description {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .desc-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .desc-icon span {
+    font-size: 24px;
+  }
+
+  .desc-content {
+    padding-left: 16px;
   }
 
   .instructor-card {

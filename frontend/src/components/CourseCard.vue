@@ -1,7 +1,7 @@
 <template>
   <router-link :to="`/${course.slug}`" class="course-card">
     <div class="card-image">
-      <img :src="getImageUrl(course.slug)" :alt="course.title" />
+      <img :src="course.image" :alt="course.title" />
       <span class="category-badge">{{ course.category }}</span>
       <span v-if="course.discounted_price" class="discount-badge">
         {{ getDiscount() }}% OFF
@@ -71,15 +71,6 @@ const getDiscount = () => {
   return Math.round(discount)
 }
 
-const getImageUrl = (slug) => {
-  const images = {
-    housekeeping: 'https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=250&fit=crop',
-    'food-and-beverage': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=250&fit=crop',
-    'front-office': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=250&fit=crop',
-    caregiving: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=400&h=250&fit=crop',
-  }
-  return images[slug] || 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=400&h=250&fit=crop'
-}
 </script>
 
 <style scoped>
