@@ -29,12 +29,10 @@
       </div>
 
       <div class="footer-section">
-        <h4>Popular Courses</h4>
+        <h4>Our Courses</h4>
         <ul>
-          <li><router-link to="/housekeeping">Housekeeping NC II</router-link></li>
-          <li><router-link to="/food-and-beverage">Food & Beverage</router-link></li>
-          <li><router-link to="/front-office">Front Office</router-link></li>
-          <li><router-link to="/caregiving">Caregiving NC II</router-link></li>
+          <li><router-link to="/bookkeeping-nc-iii">Bookkeeping NC III</router-link></li>
+          <li><router-link to="/events-management-nc-iii">Events Management NC III</router-link></li>
         </ul>
       </div>
 
