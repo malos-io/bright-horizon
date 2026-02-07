@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -6,15 +5,12 @@ from routers import course_router, sponsor_router, enrollment_router
 
 app = FastAPI(title="Training Center API")
 
-# CORS middleware for Vue.js frontend
-# Allow origins from environment variable (comma-separated) or default to localhost
-default_origins = ["http://localhost:5173", "http://localhost:3000"]
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "").split(",") if os.getenv("ALLOWED_ORIGINS") else default_origins
-allowed_origins = [origin.strip() for origin in allowed_origins if origin.strip()]
-
+# CORS middleware
+# Allow any *.brighthii.com subdomain, plus localhost for local dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origin_regex=r"https://.*\.brighthii\.com",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

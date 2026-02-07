@@ -1,9 +1,10 @@
 FROM node:20-alpine AS build
+ARG BUILD_SCRIPT=build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN npm run $BUILD_SCRIPT
 
 FROM nginx:alpine AS local
 COPY --from=build /app/dist /usr/share/nginx/html

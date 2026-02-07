@@ -1,5 +1,6 @@
 # Build stage
 FROM node:20-alpine AS build
+ARG BUILD_SCRIPT=build
 
 WORKDIR /app
 
@@ -13,7 +14,7 @@ RUN npm ci
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN npm run $BUILD_SCRIPT
 
 # Production stage (for docker-compose local)
 FROM nginx:alpine AS local
