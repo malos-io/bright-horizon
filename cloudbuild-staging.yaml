@@ -1,4 +1,8 @@
 steps:
+  # ============================================
+  # BACKEND
+  # ============================================
+
   # Step 1: Build backend image
   - name: 'gcr.io/cloud-builders/docker'
     args:
@@ -50,37 +54,41 @@ steps:
     id: 'get-backend-url'
     waitFor: ['deploy-backend']
 
-  # Step 5: Build frontend image (Cloud Run target)
+  # ============================================
+  # FRONTEND-PUBLIC
+  # ============================================
+
+  # Step 5: Build frontend-public image
   - name: 'gcr.io/cloud-builders/docker'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         docker build \
-          -t gcr.io/$PROJECT_ID/training-frontend-staging:$COMMIT_SHA \
-          -t gcr.io/$PROJECT_ID/training-frontend-staging:latest \
+          -t gcr.io/$PROJECT_ID/training-frontend-public-staging:$COMMIT_SHA \
+          -t gcr.io/$PROJECT_ID/training-frontend-public-staging:latest \
           --target cloudrun \
-          ./frontend
-    id: 'build-frontend'
+          ./frontend-public
+    id: 'build-frontend-public'
     waitFor: ['get-backend-url']
 
-  # Step 6: Push frontend image
+  # Step 6: Push frontend-public image
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'gcr.io/$PROJECT_ID/training-frontend-staging:$COMMIT_SHA'
-    id: 'push-frontend'
-    waitFor: ['build-frontend']
+      - 'gcr.io/$PROJECT_ID/training-frontend-public-staging:$COMMIT_SHA'
+    id: 'push-frontend-public'
+    waitFor: ['build-frontend-public']
 
-  # Step 7: Deploy frontend to Cloud Run with backend URL
+  # Step 7: Deploy frontend-public to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
         BACKEND_URL=$$(cat /workspace/backend_url.txt)
-        gcloud run deploy training-frontend-staging \
-          --image=gcr.io/$PROJECT_ID/training-frontend-staging:$COMMIT_SHA \
+        gcloud run deploy training-frontend-public-staging \
+          --image=gcr.io/$PROJECT_ID/training-frontend-public-staging:$COMMIT_SHA \
           --region=asia-southeast1 \
           --platform=managed \
           --allow-unauthenticated \
@@ -90,36 +98,144 @@ steps:
           --min-instances=0 \
           --max-instances=10 \
           --set-env-vars="BACKEND_URL=$$BACKEND_URL"
-    id: 'deploy-frontend'
-    waitFor: ['push-frontend']
+    id: 'deploy-frontend-public'
+    waitFor: ['push-frontend-public']
 
-  # Step 8: Update backend CORS with frontend URL
+  # ============================================
+  # FRONTEND-ADMIN
+  # ============================================
+
+  # Step 8: Build frontend-admin image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker build \
+          -t gcr.io/$PROJECT_ID/training-frontend-admin-staging:$COMMIT_SHA \
+          -t gcr.io/$PROJECT_ID/training-frontend-admin-staging:latest \
+          --target cloudrun \
+          ./frontend-admin
+    id: 'build-frontend-admin'
+    waitFor: ['get-backend-url']
+
+  # Step 9: Push frontend-admin image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/training-frontend-admin-staging:$COMMIT_SHA'
+    id: 'push-frontend-admin'
+    waitFor: ['build-frontend-admin']
+
+  # Step 10: Deploy frontend-admin to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        FRONTEND_URL=$$(gcloud run services describe training-frontend-staging \
+        BACKEND_URL=$$(cat /workspace/backend_url.txt)
+        gcloud run deploy training-frontend-admin-staging \
+          --image=gcr.io/$PROJECT_ID/training-frontend-admin-staging:$COMMIT_SHA \
+          --region=asia-southeast1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=8080 \
+          --memory=256Mi \
+          --cpu=1 \
+          --min-instances=0 \
+          --max-instances=10 \
+          --set-env-vars="BACKEND_URL=$$BACKEND_URL"
+    id: 'deploy-frontend-admin'
+    waitFor: ['push-frontend-admin']
+
+  # ============================================
+  # FRONTEND-STUDENT
+  # ============================================
+
+  # Step 11: Build frontend-student image
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker build \
+          -t gcr.io/$PROJECT_ID/training-frontend-student-staging:$COMMIT_SHA \
+          -t gcr.io/$PROJECT_ID/training-frontend-student-staging:latest \
+          --target cloudrun \
+          ./frontend-student
+    id: 'build-frontend-student'
+    waitFor: ['get-backend-url']
+
+  # Step 12: Push frontend-student image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/training-frontend-student-staging:$COMMIT_SHA'
+    id: 'push-frontend-student'
+    waitFor: ['build-frontend-student']
+
+  # Step 13: Deploy frontend-student to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        BACKEND_URL=$$(cat /workspace/backend_url.txt)
+        gcloud run deploy training-frontend-student-staging \
+          --image=gcr.io/$PROJECT_ID/training-frontend-student-staging:$COMMIT_SHA \
+          --region=asia-southeast1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=8080 \
+          --memory=256Mi \
+          --cpu=1 \
+          --min-instances=0 \
+          --max-instances=10 \
+          --set-env-vars="BACKEND_URL=$$BACKEND_URL"
+    id: 'deploy-frontend-student'
+    waitFor: ['push-frontend-student']
+
+  # ============================================
+  # UPDATE CORS
+  # ============================================
+
+  # Step 14: Update backend CORS with all frontend URLs
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        PUBLIC_URL=$$(gcloud run services describe training-frontend-public-staging \
           --region=asia-southeast1 \
           --format='value(status.url)')
-        echo "Frontend URL: $$FRONTEND_URL"
+        ADMIN_URL=$$(gcloud run services describe training-frontend-admin-staging \
+          --region=asia-southeast1 \
+          --format='value(status.url)')
+        STUDENT_URL=$$(gcloud run services describe training-frontend-student-staging \
+          --region=asia-southeast1 \
+          --format='value(status.url)')
 
-        # Update backend with frontend URL in CORS
         gcloud run services update training-backend-staging \
           --region=asia-southeast1 \
-          --set-env-vars="ALLOWED_ORIGINS=$$FRONTEND_URL"
+          --set-env-vars="ALLOWED_ORIGINS=$$PUBLIC_URL,$$ADMIN_URL,$$STUDENT_URL"
 
         echo "=== STAGING DEPLOYMENT COMPLETE ==="
-        echo "Frontend: $$FRONTEND_URL"
-        echo "Backend: $$(cat /workspace/backend_url.txt)"
+        echo "Backend:  $$(cat /workspace/backend_url.txt)"
+        echo "Public:   $$PUBLIC_URL"
+        echo "Admin:    $$ADMIN_URL"
+        echo "Student:  $$STUDENT_URL"
     id: 'update-cors'
-    waitFor: ['deploy-frontend']
+    waitFor: ['deploy-frontend-public', 'deploy-frontend-admin', 'deploy-frontend-student']
 
 images:
   - 'gcr.io/$PROJECT_ID/training-backend-staging:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/training-backend-staging:latest'
-  - 'gcr.io/$PROJECT_ID/training-frontend-staging:$COMMIT_SHA'
-  - 'gcr.io/$PROJECT_ID/training-frontend-staging:latest'
+  - 'gcr.io/$PROJECT_ID/training-frontend-public-staging:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/training-frontend-public-staging:latest'
+  - 'gcr.io/$PROJECT_ID/training-frontend-admin-staging:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/training-frontend-admin-staging:latest'
+  - 'gcr.io/$PROJECT_ID/training-frontend-student-staging:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/training-frontend-student-staging:latest'
 
 options:
   logging: CLOUD_LOGGING_ONLY

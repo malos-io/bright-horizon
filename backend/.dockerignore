@@ -6,3 +6,5 @@ __pycache__
 *.md
 venv
 .env
+*.json
+!package.json
