@@ -1,7 +1,10 @@
+import logging
 from fastapi import APIRouter, HTTPException
 from firebase_admin import firestore
 from schemas.enrollment_schema import EnrollmentApplication
 from reusable_components.firebase import db, get_collection_name
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["enrollments"])
 
@@ -25,8 +28,8 @@ def get_enrollments():
 
         return enrollments
     except Exception as e:
+        logger.exception("Failed to submit enrollment")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.post("/enrollments")
 def submit_enrollment(application: EnrollmentApplication):
