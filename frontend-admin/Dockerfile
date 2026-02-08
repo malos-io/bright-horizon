@@ -1,5 +1,7 @@
 FROM node:20-alpine AS build
 ARG BUILD_SCRIPT=build
+ARG VITE_ZOHO_CLIENT_ID
+ENV VITE_ZOHO_CLIENT_ID=$VITE_ZOHO_CLIENT_ID
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
