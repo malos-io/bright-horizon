@@ -1,9 +1,21 @@
+from dotenv import load_dotenv
+
+# Load .env for local dev (no-op if file doesn't exist, e.g. on Cloud Run)
+load_dotenv()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
-from routers import course_router, sponsor_router, enrollment_router
+from routers import course_router, sponsor_router, enrollment_router, zoho_router
+
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="Training Center API")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # CORS middleware
 # Allow any *.brighthii.com subdomain, plus localhost for local dev
@@ -20,6 +32,7 @@ app.add_middleware(
 app.include_router(course_router.router)
 app.include_router(sponsor_router.router)
 app.include_router(enrollment_router.router)
+app.include_router(zoho_router.router)
 
 
 @app.get("/")

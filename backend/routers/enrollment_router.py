@@ -1,8 +1,13 @@
 import logging
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from firebase_admin import firestore
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from schemas.enrollment_schema import EnrollmentApplication
 from reusable_components.firebase import db, get_collection_name
+from reusable_components.auth import verify_jwt
+
+limiter = Limiter(key_func=get_remote_address)
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +15,7 @@ router = APIRouter(prefix="/api", tags=["enrollments"])
 
 
 @router.get("/enrollments")
-def get_enrollments():
+def get_enrollments(_admin: dict = Depends(verify_jwt)):
     try:
         collection = get_collection_name("pending_enrollment_application")
         docs = db.collection(collection).order_by(
@@ -32,7 +37,8 @@ def get_enrollments():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/enrollments")
-def submit_enrollment(application: EnrollmentApplication):
+@limiter.limit("5/minute")
+def submit_enrollment(request: Request, application: EnrollmentApplication):
     try:
         collection = get_collection_name("pending_enrollment_application")
         doc_data = application.model_dump()

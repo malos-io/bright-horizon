@@ -1,6 +1,10 @@
 <template>
   <div id="app">
-    <div class="admin-layout">
+    <!-- Public pages (login, callback) render without sidebar -->
+    <router-view v-if="$route.meta.public" />
+
+    <!-- Authenticated layout with sidebar -->
+    <div v-else class="admin-layout">
       <aside class="sidebar">
         <div class="sidebar-header">
           <img :src="logo" alt="Bright Horizons Institute" class="sidebar-logo" />
@@ -17,7 +21,8 @@
         <header class="top-bar">
           <h1 class="page-title">Admin Panel</h1>
           <div class="user-info">
-            <span>Admin</span>
+            <span>{{ authStore.userName || 'Admin' }}</span>
+            <button class="logout-btn" @click="handleLogout">Logout</button>
           </div>
         </header>
         <div class="content-area">
@@ -29,7 +34,17 @@
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+import { useAuthStore } from './stores/auth'
 import logo from './assets/logo.png'
+
+const authStore = useAuthStore()
+const router = useRouter()
+
+function handleLogout() {
+  authStore.logout()
+  router.push('/login')
+}
 </script>
 
 <style>
@@ -130,8 +145,27 @@ body {
 }
 
 .user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   font-size: 0.9rem;
   color: #666;
+}
+
+.logout-btn {
+  padding: 0.4rem 1rem;
+  background: transparent;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #666;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.logout-btn:hover {
+  background: #f5f5f5;
+  border-color: #ccc;
 }
 
 .content-area {
