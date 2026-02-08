@@ -38,6 +38,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 # Copy nginx template for Cloud Run (uses envsubst for BACKEND_URL)
 COPY nginx.cloudrun.conf.template /etc/nginx/conf.d/default.conf.template
+COPY .htpasswd /etc/nginx/.htpasswd
 
 # Copy entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
