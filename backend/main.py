@@ -9,7 +9,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from routers import course_router, sponsor_router, enrollment_router, zoho_router
+from routers import course_router, sponsor_router, enrollment_router, zoho_router, email_router, staff_router
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -33,6 +33,8 @@ app.include_router(course_router.router)
 app.include_router(sponsor_router.router)
 app.include_router(enrollment_router.router)
 app.include_router(zoho_router.router)
+app.include_router(email_router.router)
+app.include_router(staff_router.router)
 
 
 @app.get("/")

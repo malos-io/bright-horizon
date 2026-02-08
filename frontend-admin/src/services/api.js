@@ -66,4 +66,34 @@ export const getEnrollments = async () => {
   return response.data
 }
 
+export const getInbox = async (limit = 20, start = 1) => {
+  const response = await api.get('/email/inbox', { params: { limit, start } })
+  return response.data
+}
+
+export const getMessage = async (folderId, messageId) => {
+  const response = await api.get(`/email/messages/${folderId}/${messageId}`)
+  return response.data
+}
+
+export const getStaff = async () => {
+  const response = await api.get('/staff')
+  return response.data
+}
+
+export const addStaff = async (email, role) => {
+  const response = await api.post('/staff', { email, role })
+  return response.data
+}
+
+export const updateStaffRole = async (email, role) => {
+  const response = await api.put(`/staff/${encodeURIComponent(email)}`, { role })
+  return response.data
+}
+
+export const removeStaff = async (email) => {
+  const response = await api.delete(`/staff/${encodeURIComponent(email)}`)
+  return response.data
+}
+
 export default api

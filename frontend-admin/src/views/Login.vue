@@ -3,7 +3,10 @@
     <div class="login-card">
       <img :src="logo" alt="Bright Horizons Institute" class="login-logo" />
       <h1>Admin Portal</h1>
-      <p>Sign in with your organization account to continue.</p>
+      <p v-if="error === 'unauthorized'" class="error-msg">
+        Access denied. Your account is not authorized for admin access.
+      </p>
+      <p v-else>Sign in with your organization account to continue.</p>
       <button class="login-btn" @click="authStore.redirectToZoho()">
         Sign in with Zoho
       </button>
@@ -12,9 +15,12 @@
 </template>
 
 <script setup>
+import { useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import logo from '../assets/logo.png'
 
+const route = useRoute()
+const error = route.query.error
 const authStore = useAuthStore()
 </script>
 
@@ -54,6 +60,14 @@ const authStore = useAuthStore()
   color: #666;
   font-size: 0.9rem;
   margin-bottom: 2rem;
+}
+
+.error-msg {
+  color: #d32f2f;
+  background: #ffeaea;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
 }
 
 .login-btn {

@@ -30,7 +30,7 @@ export const useAuthStore = defineStore('auth', () => {
   function redirectToZoho() {
     const clientId = import.meta.env.VITE_ZOHO_CLIENT_ID
     const redirectUri = import.meta.env.VITE_ZOHO_REDIRECT_URI
-    const scope = 'ZohoMail.messages.ALL,ZohoMail.accounts.READ,AaaServer.profile.READ'
+    const scope = 'ZohoMail.messages.ALL,ZohoMail.accounts.READ,ZohoMail.folders.READ,AaaServer.profile.READ'
     const url = `https://accounts.zoho.com/oauth/v2/auth?scope=${scope}&client_id=${clientId}&response_type=code&redirect_uri=${encodeURIComponent(redirectUri)}&access_type=offline&prompt=consent`
     window.location.href = url
   }
