@@ -40,16 +40,9 @@
           <img :src="course.image" :alt="course.title" />
         </div>
         <div class="card-content">
-          <div class="price-section">
-            <span v-if="course.discounted_price" class="original-price">
-              &#8369;{{ formatNumber(course.price) }}
-            </span>
-            <span class="current-price">
-              &#8369;{{ formatNumber(course.discounted_price || course.price) }}
-            </span>
-            <span v-if="course.discounted_price" class="discount-badge">
-              {{ getDiscount() }}% OFF
-            </span>
+          <div class="contact-pricing">
+            <span class="contact-pricing-icon">&#128172;</span>
+            <span class="contact-pricing-text">Contact us for pricing</span>
           </div>
 
           <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary btn-full">Apply for Class Now</router-link>
@@ -173,7 +166,7 @@
     <!-- Mobile Sticky CTA -->
     <div class="mobile-cta">
       <div class="mobile-price">
-        <span class="current-price">&#8369;{{ formatNumber(course.discounted_price || course.price) }}</span>
+        <span class="contact-pricing-label">Contact us for pricing</span>
       </div>
       <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary">Apply for Class Now</router-link>
     </div>
@@ -212,12 +205,6 @@ watch(() => route.params.slug, (newSlug) => {
 
 const formatNumber = (num) => {
   return num.toLocaleString()
-}
-
-const getDiscount = () => {
-  if (!course.value?.discounted_price) return 0
-  const discount = ((course.value.price - course.value.discounted_price) / course.value.price) * 100
-  return Math.round(discount)
 }
 
 const formatDescription = (desc) => {
@@ -361,32 +348,25 @@ const formatDescription = (desc) => {
   padding: 25px;
 }
 
-.price-section {
+.contact-pricing {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  background: #e8f0fe;
+  border: 1px solid #c4d9f2;
+  border-radius: 10px;
+  padding: 14px 18px;
   margin-bottom: 20px;
 }
 
-.original-price {
-  font-size: 18px;
-  color: #999;
-  text-decoration: line-through;
+.contact-pricing-icon {
+  font-size: 22px;
 }
 
-.current-price {
-  font-size: 32px;
-  font-weight: 800;
-  color: #1a1a2e;
-}
-
-.discount-badge {
-  background: #ff6b6b;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
+.contact-pricing-text {
+  font-size: 16px;
   font-weight: 600;
+  color: #0d3b6e;
 }
 
 .btn {
@@ -773,8 +753,10 @@ const formatDescription = (desc) => {
   z-index: 100;
 }
 
-.mobile-price .current-price {
-  font-size: 24px;
+.mobile-price .contact-pricing-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #0d3b6e;
 }
 
 .mobile-cta .btn {

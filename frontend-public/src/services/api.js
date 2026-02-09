@@ -40,4 +40,14 @@ export const submitEnrollment = async (data) => {
   return response.data
 }
 
+export const sendOtp = async (email) => {
+  const response = await api.post('/otp/send', { email })
+  return response.data
+}
+
+export const verifyOtp = async (email, code) => {
+  const response = await api.post('/otp/verify', { email, code })
+  return response.data
+}
+
 export default api

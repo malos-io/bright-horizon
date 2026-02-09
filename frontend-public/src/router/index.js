@@ -4,6 +4,7 @@ import CourseDetail from '../views/CourseDetail.vue'
 import Courses from '../views/Courses.vue'
 import Sponsors from '../views/Sponsors.vue'
 import Apply from '../views/Apply.vue'
+import TrackApplication from '../views/TrackApplication.vue'
 
 const routes = [
   {
@@ -20,6 +21,11 @@ const routes = [
     path: '/sponsors',
     name: 'Sponsors',
     component: Sponsors,
+  },
+  {
+    path: '/track',
+    name: 'TrackApplication',
+    component: TrackApplication,
   },
   {
     path: '/apply',

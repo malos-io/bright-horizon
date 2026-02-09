@@ -298,7 +298,12 @@
           <div class="success-icon">&#10003;</div>
           <h2>Application Submitted!</h2>
           <p>Your registration form has been successfully submitted. We will review your application and get back to you shortly.</p>
-          <router-link to="/" class="btn-home">Back to Home</router-link>
+          <p v-if="applicationId" class="reference-id">Reference ID: <strong>{{ applicationId }}</strong></p>
+          <p class="track-hint">You can track your application status using the email you provided.</p>
+          <div class="success-actions">
+            <router-link to="/track" class="btn-track">Track Application</router-link>
+            <router-link to="/" class="btn-home">Back to Home</router-link>
+          </div>
         </div>
       </div>
     </div>
@@ -315,6 +320,7 @@ const route = useRoute()
 const courses = ref([])
 const submitting = ref(false)
 const submitted = ref(false)
+const applicationId = ref('')
 
 // Mailing address cascading dropdowns (with barangay)
 const address = useAddressDropdown({ withBarangay: true })
@@ -432,7 +438,8 @@ async function handleSubmit() {
   if (submitting.value) return
   submitting.value = true
   try {
-    await submitEnrollment({ ...form, age: computedAge.value })
+    const result = await submitEnrollment({ ...form, age: computedAge.value })
+    applicationId.value = result.id || ''
     submitted.value = true
   } catch (e) {
     console.error('Submission failed:', e)
@@ -790,6 +797,43 @@ async function handleSubmit() {
 
 .btn-home:hover {
   background: #154d87;
+}
+
+.reference-id {
+  background: #f0f4ff;
+  border: 1px solid #c4d9f2;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  color: #0d3b6e;
+  word-break: break-all;
+}
+
+.track-hint {
+  font-size: 14px;
+  color: #888;
+}
+
+.success-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.btn-track {
+  display: inline-block;
+  padding: 0.75rem 2rem;
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
+  color: white;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.btn-track:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(26, 95, 164, 0.4);
 }
 
 /* Responsive */

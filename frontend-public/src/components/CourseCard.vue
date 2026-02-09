@@ -40,12 +40,7 @@
 
       <div class="card-footer">
         <div class="price-section">
-          <span v-if="course.discounted_price" class="original-price">
-            ₱{{ formatNumber(course.price) }}
-          </span>
-          <span class="current-price">
-            ₱{{ formatNumber(course.discounted_price || course.price) }}
-          </span>
+          <span class="current-price">Contact us for pricing</span>
         </div>
         <button class="enroll-btn">View Course</button>
       </div>

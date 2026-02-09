@@ -42,7 +42,7 @@
           <li>123 Training Street, Manila</li>
           <li>Philippines 1000</li>
           <li>0995 589 2022</li>
-          <li>info@trainingcenter.ph</li>
+          <li>info@brighthii.com</li>
         </ul>
       </div>
     </div>
@@ -67,6 +67,7 @@
 
     <div class="footer-bottom">
       <p>&copy; 2026 Bright Horizons Institute Inc. All rights reserved.</p>
+      <a :href="adminUrl" class="admin-link">Admin Login</a>
     </div>
   </footer>
 </template>
@@ -75,6 +76,8 @@
 import logo from '@/assets/logo.png'
 import tesdaLogo from '@/assets/tesda-logo.png'
 import secLogo from '@/assets/sec-logo.png'
+
+const adminUrl = import.meta.env.VITE_ADMIN_URL || '/admin/'
 </script>
 
 <style scoped>
@@ -245,6 +248,19 @@ import secLogo from '@/assets/sec-logo.png'
 .footer-bottom p {
   color: #a0a0a0;
   font-size: 14px;
+}
+
+.admin-link {
+  color: #666;
+  font-size: 12px;
+  text-decoration: none;
+  margin-top: 8px;
+  display: inline-block;
+  transition: color 0.2s;
+}
+
+.admin-link:hover {
+  color: #a0a0a0;
 }
 
 @media (max-width: 768px) {
