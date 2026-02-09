@@ -6,6 +6,92 @@
         <p>MIS 03-01 — Learner's / Trainee's / Student's Registration Form</p>
       </div>
 
+      <div class="requirements-card">
+        <div class="requirements-header" @click="requirementsCollapsed = !requirementsCollapsed">
+          <div class="req-header-left">
+            <h3>Documentary Requirements</h3>
+            <p>Prepare the following before your enrollment. Keep at least 2 photocopies; bring originals for verification.</p>
+          </div>
+          <button class="req-toggle" type="button">
+            <svg :class="{ rotated: requirementsCollapsed }" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+
+        <div class="requirements-body" v-show="!requirementsCollapsed">
+          <div class="req-grid">
+            <div class="req-item">
+              <span class="req-num">1</span>
+              <div class="req-content">
+                <strong>Birth Certificate</strong>
+                <span class="req-detail">PSA/NSO-issued photocopy</span>
+              </div>
+              <span class="req-onsite-badge">Required</span>
+            </div>
+
+            <div class="req-item">
+              <span class="req-num">2</span>
+              <div class="req-content">
+                <strong>Educational Credentials</strong>
+                <span class="req-detail">Photocopy of any of the following:</span>
+                <ul class="req-sub">
+                  <li>High School or Senior High School Diploma</li>
+                  <li>Transcript of Records (College/Graduate)</li>
+                  <li>Form 137 or 138 (Report Card)</li>
+                </ul>
+              </div>
+              <span class="req-onsite-badge">Required</span>
+            </div>
+
+            <div class="req-item">
+              <span class="req-num">3</span>
+              <div class="req-content">
+                <strong>ID Pictures</strong>
+                <span class="req-detail">White background, with collar, printed name tag</span>
+                <ul class="req-sub">
+                  <li>4 pcs — Passport size</li>
+                  <li>4 pcs — 1x1 size</li>
+                </ul>
+              </div>
+              <span class="req-onsite-badge">We can provide this onsite</span>
+            </div>
+
+            <div class="req-item">
+              <span class="req-num">4</span>
+              <div class="req-content">
+                <strong>Government Issued ID</strong>
+                <span class="req-detail">Any one of the following:</span>
+                <ul class="req-sub">
+                  <li>National ID (PhilSys)</li>
+                  <li>Voter's ID</li>
+                  <li>Driver's License</li>
+                  <li>Passport</li>
+                </ul>
+              </div>
+              <span class="req-onsite-badge">Required</span>
+            </div>
+
+            <div class="req-item">
+              <span class="req-num">5</span>
+              <div class="req-content">
+                <strong>Proof of Name Change</strong>
+                <span class="req-detail">Required only if name on Birth Certificate differs from your current legal name (e.g. married name)</span>
+                <ul class="req-sub">
+                  <li>Marriage Certificate</li>
+                  <li>Court Order for change of name</li>
+                </ul>
+              </div>
+              <span class="req-onsite-badge">If applicable</span>
+            </div>
+
+          </div>
+
+          <div class="req-note">
+            <div class="req-note-badge">NOTE</div>
+            <p>You will be asked to upload or photograph these documents as part of your application to help expedite the review process. <strong>You must bring the physical documents onsite once accepted</strong> for verification prior to enrollment.</p>
+          </div>
+        </div>
+      </div>
+
       <form @submit.prevent="handleSubmit" class="tesda-form">
         <!-- Section 2: Manpower Profile -->
         <div class="form-section">
@@ -297,11 +383,29 @@
         <div class="success-card">
           <div class="success-icon">&#10003;</div>
           <h2>Application Submitted!</h2>
-          <p>Your registration form has been successfully submitted. We will review your application and get back to you shortly.</p>
+          <p>Your registration form has been successfully submitted.</p>
           <p v-if="applicationId" class="reference-id">Reference ID: <strong>{{ applicationId }}</strong></p>
-          <p class="track-hint">You can track your application status using the email you provided.</p>
+
+          <div class="next-step-card">
+            <h3>What's Next?</h3>
+            <p class="next-step-desc">To move your application forward, you'll need to submit the following required documents:</p>
+            <ul class="next-step-docs">
+              <li>Birth Certificate (PSA/NSO)</li>
+              <li>Educational Credentials (TOR, Diploma, Form 137, etc.)</li>
+              <li>Government Issued ID</li>
+            </ul>
+            <p class="next-step-note">
+              You don't have to upload them right now &mdash; but your application will remain on
+              <strong>"Pending Upload of Required Documents"</strong> until they are submitted.
+            </p>
+          </div>
+
           <div class="success-actions">
-            <router-link to="/track" class="btn-track">Track Application</router-link>
+            <router-link to="/track" class="btn-track">Submit Documents Now</router-link>
+          </div>
+
+          <div class="later-hint">
+            <p>Not ready yet? No worries! You can always upload your documents later through the <router-link to="/track" class="hint-link">Track Application</router-link> page using the email you provided.</p>
             <router-link to="/" class="btn-home">Back to Home</router-link>
           </div>
         </div>
@@ -321,6 +425,7 @@ const courses = ref([])
 const submitting = ref(false)
 const submitted = ref(false)
 const applicationId = ref('')
+const requirementsCollapsed = ref(false)
 
 // Mailing address cascading dropdowns (with barangay)
 const address = useAddressDropdown({ withBarangay: true })
@@ -461,6 +566,210 @@ async function handleSubmit() {
   max-width: 900px;
   margin: 0 auto;
   position: relative;
+}
+
+/* Requirements Card */
+.requirements-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e0e8f5;
+  margin-bottom: 2rem;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(26, 95, 164, 0.08);
+}
+
+.requirements-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
+  transition: opacity 0.2s;
+}
+
+.requirements-header:hover {
+  opacity: 0.95;
+}
+
+.req-header-left h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.req-header-left p {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+}
+
+.req-toggle {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  flex-shrink: 0;
+  transition: transform 0.2s, background 0.2s;
+}
+
+.req-toggle:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.req-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.req-toggle svg.rotated {
+  transform: rotate(-180deg);
+}
+
+.requirements-body {
+  padding: 24px;
+}
+
+.req-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.req-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #eef2f7;
+  transition: border-color 0.2s;
+}
+
+.req-item:hover {
+  border-color: #c8d8ec;
+}
+
+.req-num {
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.req-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.req-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+  line-height: 1.4;
+}
+
+.req-detail {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.req-detail-note {
+  margin-top: 6px;
+  font-style: italic;
+  color: #888;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.req-sub {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.req-sub li {
+  font-size: 13px;
+  color: #555;
+  position: relative;
+  padding-left: 12px;
+}
+
+.req-sub li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 5px;
+  height: 5px;
+  background: #1a5fa4;
+  border-radius: 50%;
+}
+
+.req-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 16px;
+  background: #f0f5ff;
+  border-radius: 10px;
+  border: 1px solid #d4e2f4;
+}
+
+.req-onsite-badge {
+  background: linear-gradient(135deg, #e65100 0%, #ff8f00 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  align-self: center;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.req-note-badge {
+  background: #1a5fa4;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.req-note p {
+  margin: 0;
+  font-size: 13px;
+  color: #444;
+  line-height: 1.6;
 }
 
 .form-header {
@@ -754,9 +1063,11 @@ async function handleSubmit() {
   border-radius: 20px;
   padding: 3rem;
   text-align: center;
-  max-width: 450px;
+  max-width: 520px;
   width: 90%;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 .success-icon {
@@ -812,6 +1123,86 @@ async function handleSubmit() {
 .track-hint {
   font-size: 14px;
   color: #888;
+}
+
+.next-step-card {
+  background: #f8f9ff;
+  border: 1px solid #d4e0f7;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.next-step-card h3 {
+  font-size: 1rem;
+  color: #0d3b6e;
+  margin: 0 0 0.5rem;
+}
+
+.next-step-desc {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 0 0 0.75rem;
+  line-height: 1.5;
+}
+
+.next-step-docs {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem;
+}
+
+.next-step-docs li {
+  font-size: 0.85rem;
+  color: #1a1a2e;
+  padding: 0.35rem 0 0.35rem 1.25rem;
+  position: relative;
+  font-weight: 500;
+}
+
+.next-step-docs li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: #1a5fa4;
+  border-radius: 50%;
+}
+
+.next-step-note {
+  font-size: 0.8rem;
+  color: #856404;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.later-hint {
+  margin-top: 1.25rem;
+}
+
+.later-hint p {
+  font-size: 0.82rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.hint-link {
+  color: #1a5fa4;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hint-link:hover {
+  text-decoration: underline;
 }
 
 .success-actions {

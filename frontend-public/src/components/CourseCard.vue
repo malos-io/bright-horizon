@@ -38,6 +38,10 @@
         </div>
       </div>
 
+      <div class="scholarship-note">
+        <span>&#127891;</span> Scholarships Available
+      </div>
+
       <div class="card-footer">
         <div class="price-section">
           <span class="current-price">Contact us for pricing</span>
@@ -201,6 +205,17 @@ const getDiscount = () => {
 .enrolled {
   font-size: 12px;
   color: #888;
+}
+
+.scholarship-note {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #e65100;
+  margin-bottom: 15px;
 }
 
 .card-footer {

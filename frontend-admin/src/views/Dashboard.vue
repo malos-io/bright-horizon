@@ -55,7 +55,7 @@
               <td>{{ enrollment.course }}</td>
               <td>
                 <span class="status-badge" :class="'status-' + enrollment.status">
-                  {{ enrollment.status }}
+                  {{ formatStatus(enrollment.status) }}
                 </span>
               </td>
               <td>{{ formatDate(enrollment.created_at) }}</td>
@@ -118,8 +118,23 @@ const enrollments = ref([])
 const pdfLoading = ref(null)
 
 const pendingCount = computed(() =>
-  enrollments.value.filter(e => e.status === 'pending').length
+  enrollments.value.filter(e =>
+    e.status === 'pending' || e.status === 'pending_upload' || e.status === 'pending_review'
+  ).length
 )
+
+function formatStatus(status) {
+  const map = {
+    pending: 'Pending',
+    pending_upload: 'Pending Upload of Required Documents',
+    pending_review: 'Pending Review',
+    documents_rejected: 'Docs Rejected',
+    documents_accepted: 'Docs Accepted',
+    physical_docs_required: 'Physical Docs Required',
+    completed: 'Completed',
+  }
+  return map[status] || status
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return '--'
@@ -293,10 +308,16 @@ onMounted(async () => {
   color: #155724;
 }
 
-.status-rejected {
+.status-rejected, .status-documents_rejected {
   background: #f8d7da;
   color: #721c24;
 }
+
+.status-pending_upload { background: #fff3cd; color: #856404; }
+.status-pending_review { background: #e3f2fd; color: #1565c0; }
+.status-documents_accepted { background: #d4edda; color: #155724; }
+.status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
+.status-completed { background: #c8e6c9; color: #1b5e20; }
 
 .actions-cell {
   display: flex;

@@ -47,6 +47,63 @@ export const sendOtp = async (email) => {
 
 export const verifyOtp = async (email, code) => {
   const response = await api.post('/otp/verify', { email, code })
+  if (response.data.token) {
+    setApplicantToken(response.data.token)
+  }
+  return response.data
+}
+
+// ── Applicant token management ──
+
+let applicantToken = null
+
+export const setApplicantToken = (token) => {
+  applicantToken = token
+}
+
+export const clearApplicantToken = () => {
+  applicantToken = null
+}
+
+const authHeaders = () =>
+  applicantToken ? { Authorization: `Bearer ${applicantToken}` } : {}
+
+// ── Applicant authenticated endpoints ──
+
+export const getApplicantEnrollment = async (enrollmentId) => {
+  const response = await api.get(`/applicant/enrollments/${enrollmentId}`, {
+    headers: authHeaders(),
+  })
+  return response.data
+}
+
+export const getApplicantDocuments = async (enrollmentId) => {
+  const response = await api.get(`/applicant/enrollments/${enrollmentId}/documents`, {
+    headers: authHeaders(),
+  })
+  return response.data
+}
+
+export const updateApplicantEnrollment = async (enrollmentId, fields) => {
+  const response = await api.patch(`/applicant/enrollments/${enrollmentId}`, fields, {
+    headers: authHeaders(),
+  })
+  return response.data
+}
+
+export const uploadApplicantDocument = async (enrollmentId, docType, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await api.post(
+    `/applicant/enrollments/${enrollmentId}/documents/${docType}`,
+    formData,
+    {
+      headers: {
+        ...authHeaders(),
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  )
   return response.data
 }
 

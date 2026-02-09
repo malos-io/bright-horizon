@@ -44,6 +44,10 @@
             <span class="contact-pricing-icon">&#128172;</span>
             <span class="contact-pricing-text">Contact us for pricing</span>
           </div>
+          <div class="scholarship-banner">
+            <span class="scholarship-icon">&#127891;</span>
+            <span class="scholarship-text">Scholarship Available</span>
+          </div>
 
           <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary btn-full">Apply for Class Now</router-link>
 
@@ -167,6 +171,7 @@
     <div class="mobile-cta">
       <div class="mobile-price">
         <span class="contact-pricing-label">Contact us for pricing</span>
+        <span class="scholarship-label">&#127891; Scholarship Available</span>
       </div>
       <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary">Apply for Class Now</router-link>
     </div>
@@ -367,6 +372,27 @@ const formatDescription = (desc) => {
   font-size: 16px;
   font-weight: 600;
   color: #0d3b6e;
+}
+
+.scholarship-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+}
+
+.scholarship-icon {
+  font-size: 20px;
+}
+
+.scholarship-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #e65100;
 }
 
 .btn {
@@ -757,6 +783,15 @@ const formatDescription = (desc) => {
   font-size: 15px;
   font-weight: 600;
   color: #0d3b6e;
+  display: block;
+}
+
+.mobile-price .scholarship-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e65100;
+  margin-top: 2px;
+  display: block;
 }
 
 .mobile-cta .btn {

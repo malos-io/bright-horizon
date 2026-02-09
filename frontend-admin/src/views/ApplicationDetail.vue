@@ -20,7 +20,9 @@
           <h2>{{ enrollment.lastName }}, {{ enrollment.firstName }} {{ enrollment.middleName }}</h2>
           <p class="summary-meta">{{ enrollment.course }} &middot; {{ formatDate(enrollment.created_at) }}</p>
         </div>
-        <span class="status-badge" :class="'status-' + enrollment.status">{{ enrollment.status }}</span>
+        <select v-model="statusValue" @change="handleStatusChange" class="status-select" :class="'status-' + statusValue">
+          <option v-for="s in enrollmentStatuses" :key="s.value" :value="s.value">{{ s.label }}</option>
+        </select>
       </div>
 
       <!-- Application Form Section -->
@@ -301,6 +303,104 @@
         </div>
       </div>
 
+      <!-- Documents Section -->
+      <div class="section">
+        <div class="section-header">
+          <h3 @click="docsExpanded = !docsExpanded" class="section-toggle">
+            {{ docsExpanded ? '&#9660;' : '&#9654;' }} Documents
+          </h3>
+        </div>
+
+        <div v-show="docsExpanded" class="docs-content">
+          <div class="docs-grid">
+            <div class="doc-card" v-for="(info, docType) in documentTypes" :key="docType">
+              <div class="doc-card-header">
+                <span class="doc-name">{{ info.label }}</span>
+                <span class="doc-badge" :class="info.required ? 'badge-required' : 'badge-optional'">
+                  {{ info.required ? 'Required' : 'Optional' }}
+                </span>
+              </div>
+
+              <div class="doc-review-bar" v-if="getDocReviewStatus(docType) !== 'pending'">
+                <span class="doc-status-badge" :class="'doc-status-' + getDocReviewStatus(docType)">
+                  {{ formatDocStatus(getDocReviewStatus(docType)) }}
+                </span>
+                <span v-if="getDocRejectReason(docType)" class="reject-reason">
+                  {{ getDocRejectReason(docType) }}
+                </span>
+              </div>
+
+              <div class="doc-slots">
+                <!-- Applicant Upload Slot -->
+                <div class="doc-slot">
+                  <span class="slot-label">Applicant Upload</span>
+                  <div v-if="documents[docType]?.applicant_upload" class="slot-file">
+                    <a :href="documents[docType].applicant_upload.file_url" target="_blank" class="file-link">
+                      {{ documents[docType].applicant_upload.file_name }}
+                    </a>
+                    <span class="file-meta">{{ formatDate(documents[docType].applicant_upload.uploaded_at) }}</span>
+                    <button class="btn-delete-doc" @click="handleDelete(docType, 'applicant')" :disabled="deleting[`${docType}_applicant`]">
+                      &#10005;
+                    </button>
+                  </div>
+                  <div v-else class="slot-empty">
+                    <label class="upload-label" :class="{ disabled: uploading[`${docType}_applicant`] }">
+                      <input type="file" class="file-input" @change="handleUpload($event, docType, 'applicant')" :disabled="uploading[`${docType}_applicant`]" />
+                      {{ uploading[`${docType}_applicant`] ? 'Uploading...' : 'Upload' }}
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Official Scan Slot -->
+                <div class="doc-slot">
+                  <span class="slot-label">Official Scan</span>
+                  <div v-if="documents[docType]?.official_scan" class="slot-file">
+                    <a :href="documents[docType].official_scan.file_url" target="_blank" class="file-link">
+                      {{ documents[docType].official_scan.file_name }}
+                    </a>
+                    <span class="file-meta">{{ formatDate(documents[docType].official_scan.uploaded_at) }}</span>
+                    <button class="btn-delete-doc" @click="handleDelete(docType, 'official')" :disabled="deleting[`${docType}_official`]">
+                      &#10005;
+                    </button>
+                  </div>
+                  <div v-else class="slot-empty">
+                    <label class="upload-label" :class="{ disabled: uploading[`${docType}_official`] }">
+                      <input type="file" class="file-input" @change="handleUpload($event, docType, 'official')" :disabled="uploading[`${docType}_official`]" />
+                      {{ uploading[`${docType}_official`] ? 'Uploading...' : 'Upload' }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="doc-review-actions" v-if="hasAnyFile(docType)">
+                <button class="btn-accept" @click="reviewDoc(docType, 'accepted')"
+                  :disabled="getDocReviewStatus(docType) === 'accepted'">
+                  Accept
+                </button>
+                <button class="btn-reject-action" @click="openRejectModal(docType)"
+                  :disabled="getDocReviewStatus(docType) === 'rejected'">
+                  Reject
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reject Modal -->
+      <div v-if="rejectModal.show" class="modal-overlay" @click.self="rejectModal.show = false">
+        <div class="modal-content">
+          <h3>Reject Document: {{ documentTypes[rejectModal.docType]?.label }}</h3>
+          <textarea v-model="rejectModal.reason" placeholder="Reason for rejection..." rows="3" class="reject-textarea"></textarea>
+          <div class="modal-actions">
+            <button class="btn-cancel" @click="rejectModal.show = false">Cancel</button>
+            <button class="btn-reject-action" @click="submitReject" :disabled="!rejectModal.reason.trim()">
+              Confirm Reject
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Changelog Section -->
       <div class="section" v-if="changelog.length > 0">
         <div class="section-header">
@@ -338,7 +438,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -351,8 +451,24 @@ const pdfLoading = ref(false)
 const saveMessage = ref('')
 const saveMessageType = ref('success')
 const formExpanded = ref(true)
+const docsExpanded = ref(true)
 const changelogExpanded = ref(true)
 const courses = ref([])
+const documentTypes = ref({})
+const documents = ref({})
+const uploading = ref({})
+const deleting = ref({})
+const statusValue = ref('')
+const rejectModal = reactive({ show: false, docType: '', reason: '' })
+
+const enrollmentStatuses = [
+  { value: 'pending_upload', label: 'Pending Upload of Required Documents' },
+  { value: 'pending_review', label: 'Pending Document Review' },
+  { value: 'documents_rejected', label: 'Documents Rejected' },
+  { value: 'documents_accepted', label: 'Documents Accepted' },
+  { value: 'physical_docs_required', label: 'Physical Documents Required' },
+  { value: 'completed', label: 'Completed' },
+]
 
 const editSnapshot = ref({})
 
@@ -518,9 +634,104 @@ function formatFieldName(key) {
   return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase())
 }
 
+async function handleStatusChange() {
+  try {
+    await updateEnrollment(route.params.id, { status: statusValue.value })
+    await loadEnrollment()
+  } catch (e) {
+    console.error('Failed to update status:', e)
+    alert('Failed to update status')
+    statusValue.value = enrollment.value?.status || 'pending_upload'
+  }
+}
+
+function getDocReviewStatus(docType) {
+  return documents.value[docType]?.review?.status || 'pending'
+}
+
+function getDocRejectReason(docType) {
+  return documents.value[docType]?.review?.reject_reason || ''
+}
+
+function hasAnyFile(docType) {
+  const d = documents.value[docType]
+  return !!(d?.applicant_upload || d?.official_scan)
+}
+
+function formatDocStatus(status) {
+  const map = { pending: 'Pending', uploaded: 'Uploaded - Needs Admin Review', accepted: 'Accepted', rejected: 'Rejected' }
+  return map[status] || status
+}
+
+function openRejectModal(docType) {
+  rejectModal.docType = docType
+  rejectModal.reason = ''
+  rejectModal.show = true
+}
+
+async function submitReject() {
+  await reviewDoc(rejectModal.docType, 'rejected', rejectModal.reason)
+  rejectModal.show = false
+}
+
+async function reviewDoc(docType, status, rejectReason = null) {
+  try {
+    await reviewDocument(route.params.id, docType, status, rejectReason)
+    await loadDocuments()
+    await loadEnrollment()
+  } catch (e) {
+    console.error('Failed to review document:', e)
+    alert('Failed to review document. Please try again.')
+  }
+}
+
+async function loadDocuments() {
+  try {
+    const data = await getDocuments(route.params.id)
+    documentTypes.value = data.document_types || {}
+    documents.value = data.documents || {}
+  } catch (e) {
+    console.error('Failed to load documents:', e)
+  }
+}
+
+async function handleUpload(event, docType, source) {
+  const file = event.target.files?.[0]
+  if (!file) return
+  const key = `${docType}_${source}`
+  uploading.value[key] = true
+  try {
+    await uploadDocument(route.params.id, docType, file, source)
+    await loadDocuments()
+  } catch (e) {
+    console.error('Failed to upload document:', e)
+    alert('Failed to upload document. Please try again.')
+  } finally {
+    uploading.value[key] = false
+    event.target.value = ''
+  }
+}
+
+async function handleDelete(docType, source) {
+  if (!confirm('Delete this document?')) return
+  const key = `${docType}_${source}`
+  deleting.value[key] = true
+  try {
+    await deleteDocument(route.params.id, docType, source)
+    await loadDocuments()
+  } catch (e) {
+    console.error('Failed to delete document:', e)
+    alert('Failed to delete document. Please try again.')
+  } finally {
+    deleting.value[key] = false
+  }
+}
+
 async function loadEnrollment() {
   try {
     enrollment.value = await getEnrollment(route.params.id)
+    // Map legacy "pending" to "pending_upload" for the dropdown
+    statusValue.value = enrollment.value.status === 'pending' ? 'pending_upload' : (enrollment.value.status || 'pending_upload')
     populateFormData(enrollment.value)
   } catch (e) {
     console.error('Failed to load enrollment:', e)
@@ -532,6 +743,7 @@ async function loadEnrollment() {
 
 onMounted(async () => {
   loadEnrollment()
+  loadDocuments()
   try {
     courses.value = await getCourses()
   } catch (e) {
@@ -616,9 +828,22 @@ onMounted(async () => {
   text-transform: capitalize;
 }
 
-.status-pending { background: #fff3cd; color: #856404; }
-.status-approved { background: #d4edda; color: #155724; }
-.status-rejected { background: #f8d7da; color: #721c24; }
+.status-pending, .status-pending_upload { background: #fff3cd; color: #856404; }
+.status-approved, .status-documents_accepted { background: #d4edda; color: #155724; }
+.status-rejected, .status-documents_rejected { background: #f8d7da; color: #721c24; }
+.status-pending_review { background: #e3f2fd; color: #1565c0; }
+.status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
+.status-completed { background: #c8e6c9; color: #1b5e20; }
+
+.status-select {
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  appearance: auto;
+}
 
 .section {
   background: white;
@@ -919,6 +1144,253 @@ onMounted(async () => {
 .old-value { color: #c0392b; }
 .new-value { color: #27ae60; }
 
+/* ── Documents section ── */
+
+.docs-content { margin-top: 1.25rem; }
+
+.docs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.doc-card {
+  background: #fafbff;
+  border: 1px solid #e8f0fe;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.doc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: #f0f5ff;
+  border-bottom: 1px solid #e8f0fe;
+}
+
+.doc-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.doc-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-required { background: #fff3cd; color: #856404; }
+.badge-optional { background: #e8f0fe; color: #1a5fa4; }
+
+.doc-slots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: #e8f0fe;
+}
+
+.doc-slot {
+  padding: 0.75rem 1.25rem;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.slot-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.slot-file {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.file-link {
+  font-size: 0.82rem;
+  color: #1a5fa4;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.file-link:hover { text-decoration: underline; }
+
+.file-meta {
+  font-size: 0.7rem;
+  color: #999;
+}
+
+.btn-delete-doc {
+  background: none;
+  border: none;
+  color: #c0392b;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: background 0.15s;
+  margin-left: auto;
+}
+
+.btn-delete-doc:hover:not(:disabled) { background: #fde8e8; }
+.btn-delete-doc:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.slot-empty {
+  display: flex;
+  align-items: center;
+}
+
+.upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1a5fa4;
+  background: #e8f0fe;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.upload-label:hover:not(.disabled) { background: #d0e2fc; }
+.upload-label.disabled { opacity: 0.6; cursor: not-allowed; }
+
+.file-input {
+  display: none;
+}
+
+/* ── Document review ── */
+
+.doc-review-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1.25rem;
+  background: #fafbff;
+  border-bottom: 1px solid #e8f0fe;
+}
+
+.doc-status-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.doc-status-uploaded { background: #fff3cd; color: #856404; }
+.doc-status-accepted { background: #d4edda; color: #155724; }
+.doc-status-rejected { background: #f8d7da; color: #721c24; }
+
+.reject-reason {
+  font-size: 0.8rem;
+  color: #721c24;
+  font-style: italic;
+}
+
+.doc-review-actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-top: 1px solid #e8f0fe;
+}
+
+.btn-accept {
+  padding: 0.3rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #155724;
+  background: #d4edda;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-accept:hover:not(:disabled) { background: #b7dfc5; }
+.btn-accept:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-reject-action {
+  padding: 0.3rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #721c24;
+  background: #f8d7da;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-reject-action:hover:not(:disabled) { background: #f1b5bb; }
+.btn-reject-action:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Reject modal ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  max-width: 450px;
+  width: 90%;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.modal-content h3 {
+  font-size: 1rem;
+  color: #1a1a2e;
+  margin-bottom: 1rem;
+}
+
+.reject-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 1rem;
+}
+
+.reject-textarea:focus {
+  outline: none;
+  border-color: #c0392b;
+  box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 @media (max-width: 768px) {
   .form-row,
   .form-row.three-col,
@@ -928,6 +1400,7 @@ onMounted(async () => {
 
   .checkbox-group { grid-template-columns: 1fr; }
   .form-section { padding: 1.25rem; }
+  .doc-slots { grid-template-columns: 1fr; }
 
   .summary-card {
     flex-direction: column;

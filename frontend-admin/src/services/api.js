@@ -106,6 +106,34 @@ export const updateEnrollment = async (id, fields) => {
   return response.data
 }
 
+export const getDocuments = async (enrollmentId) => {
+  const response = await api.get(`/enrollments/${enrollmentId}/documents`)
+  return response.data
+}
+
+export const uploadDocument = async (enrollmentId, docType, file, source = 'official') => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await api.post(
+    `/enrollments/${enrollmentId}/documents/${docType}?source=${source}`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  )
+  return response.data
+}
+
+export const deleteDocument = async (enrollmentId, docType, source = 'official') => {
+  const response = await api.delete(`/enrollments/${enrollmentId}/documents/${docType}?source=${source}`)
+  return response.data
+}
+
+export const reviewDocument = async (enrollmentId, docType, status, rejectReason = null) => {
+  const body = { status }
+  if (rejectReason) body.reject_reason = rejectReason
+  const response = await api.post(`/enrollments/${enrollmentId}/documents/${docType}/review`, body)
+  return response.data
+}
+
 export const exportEnrollmentPdf = async (id) => {
   const response = await api.get(`/enrollments/${id}/pdf`, { responseType: 'blob' })
   const disposition = response.headers['content-disposition'] || ''

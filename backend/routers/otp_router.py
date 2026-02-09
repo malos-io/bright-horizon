@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from reusable_components.email_notification_helper import send_email
+from reusable_components.auth import create_applicant_jwt
 from reusable_components.firebase import db, get_collection_name
 from email_templates.otp_verification import get_otp_email_html
 
@@ -140,4 +141,9 @@ async def verify_otp(request: OtpVerifyRequest):
             "email": data.get("email", ""),
         })
 
-    return {"applications": applications}
+    # Issue short-lived applicant JWT for authenticated access
+    enrollment_ids = [app["id"] for app in applications]
+    name = applications[0]["firstName"] if applications else ""
+    token = create_applicant_jwt(email, name, enrollment_ids)
+
+    return {"applications": applications, "token": token}
