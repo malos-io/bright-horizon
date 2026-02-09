@@ -3,6 +3,8 @@ import re
 from datetime import timedelta
 from google.cloud import storage
 from google.oauth2 import service_account
+from google.auth import default as google_auth_default
+from google.auth.transport import requests as google_auth_requests
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
 
@@ -78,7 +80,21 @@ def generate_signed_url(gcs_path: str, expiration_minutes: int = 60, bucket_name
     client = _get_client()
     bucket = client.bucket(bucket_name or get_bucket_name())
     blob = bucket.blob(gcs_path)
-    return blob.generate_signed_url(expiration=timedelta(minutes=expiration_minutes), method="GET")
+
+    # Dev: client has a private key from the creds file, sign locally
+    creds_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "brighthii-creds.json")
+    if os.path.exists(creds_path):
+        return blob.generate_signed_url(expiration=timedelta(minutes=expiration_minutes), method="GET")
+
+    # Staging/Prod (Cloud Run): no private key, use IAM signBlob API
+    credentials, _project = google_auth_default()
+    credentials.refresh(google_auth_requests.Request())
+    return blob.generate_signed_url(
+        expiration=timedelta(minutes=expiration_minutes),
+        method="GET",
+        service_account_email=credentials.service_account_email,
+        access_token=credentials.token,
+    )
 
 
 def delete_file(destination_path: str, bucket_name: str = None):
