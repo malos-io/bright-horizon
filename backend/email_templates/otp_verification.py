@@ -19,16 +19,8 @@ def get_otp_email_html(code: str, name: str) -> str:
                 <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.08);">
                     <!-- Header -->
                     <tr>
-                        <td style="background:linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%); padding:30px 40px; text-align:center;">
-                            <!--[if !mso]><!-->
-                            <img src="{logo_url}" alt="" style="height:60px; display:inline-block;" />
-                            <!--<![endif]-->
-                            <div style="color:#ffffff; font-size:20px; font-weight:700; margin-top:8px;">
-                                Bright Horizons Institute
-                            </div>
-                            <div style="color:rgba(255,255,255,0.7); font-size:12px; font-style:italic; margin-top:2px;">
-                                Where Future Shines Bright
-                            </div>
+                        <td style="background:#ffffff; padding:30px 40px; text-align:center; border-bottom:2px solid #e8e8e8;">
+                            <img src="{logo_url}" alt="Bright Horizons Institute" style="height:70px; display:inline-block;" />
                         </td>
                     </tr>
                     <!-- Body -->
