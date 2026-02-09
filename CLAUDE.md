@@ -24,8 +24,9 @@ All environments use the **(default)** Firestore database.
 
 ## Theme Colors
 - Primary Blue: `#1a5fa4`
-- Accent Orange: `#e8872a`
-- Gradient: `linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%)`
+- Dark Navy: `#0d3b6e`
+- Gradient: `linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%)`
+- Sidebar Gradient: `linear-gradient(180deg, #0d3b6e 0%, #1a5fa4 100%)`
 
 ## Deployment
 - **Docker Compose (dev)**: `docker compose -f docker-compose.dev.yml up --build`

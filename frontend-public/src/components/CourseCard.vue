@@ -233,7 +233,7 @@ const getDiscount = () => {
 }
 
 .enroll-btn {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border: none;
   padding: 10px 20px;

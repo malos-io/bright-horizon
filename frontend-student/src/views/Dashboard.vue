@@ -55,7 +55,7 @@ onMounted(async () => {
 }
 
 .welcome-card {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border-radius: 12px;
   padding: 2rem;
@@ -95,7 +95,7 @@ onMounted(async () => {
 .stat-value {
   font-size: 2rem;
   font-weight: 700;
-  color: #e8872a;
+  color: #1a5fa4;
 }
 
 .section {
@@ -136,7 +136,7 @@ onMounted(async () => {
 
 .course-category {
   font-size: 0.8rem;
-  color: #e8872a;
+  color: #1a5fa4;
   font-weight: 500;
   margin-bottom: 0.25rem;
 }

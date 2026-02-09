@@ -181,7 +181,7 @@ onMounted(async () => {
 }
 
 .highlight {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -213,7 +213,7 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
 }
 
@@ -397,7 +397,7 @@ onMounted(async () => {
 .check {
   width: 30px;
   height: 30px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -428,7 +428,7 @@ onMounted(async () => {
 
 /* CTA Section */
 .cta {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   padding: 80px 20px;
   text-align: center;
 }

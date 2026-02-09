@@ -73,8 +73,9 @@ This TESDA-accredited program prepares you for careers in accounting departments
         requirements=[
             "At least 18 years old",
             "High school graduate or equivalent",
-            "Basic computer literacy",
-            "Basic math skills",
+            "Basic Math/Arithmetic Proficiency",
+            "Basic Computer Literacy (MS Excel)",
+            "Analytical Skills",
         ],
         what_you_learn=[
             "Recording business transactions in accounting journals",
@@ -155,8 +156,9 @@ This TESDA-accredited qualification prepares you for careers in the tourism and 
         requirements=[
             "At least 18 years old",
             "High school graduate or equivalent",
-            "Can communicate in basic English (oral and written)",
-            "Good interpersonal skills",
+            "Effective Communication Skills (English/Filipino)",
+            "Organizational and Time-Management Skills",
+            "Basic Computer Literacy (MS Word/PowerPoint)",
         ],
         what_you_learn=[
             "Planning and developing event proposals and bids",

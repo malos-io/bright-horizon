@@ -714,7 +714,7 @@ async function handleSubmit() {
   font-size: 1.1rem;
   font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   border: none;
   border-radius: 12px;
   cursor: pointer;
@@ -755,7 +755,7 @@ async function handleSubmit() {
 .success-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;

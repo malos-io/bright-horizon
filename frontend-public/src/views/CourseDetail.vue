@@ -53,7 +53,6 @@
           </div>
 
           <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary btn-full">Apply for Class Now</router-link>
-          <button class="btn btn-outline btn-full">Download Brochure</button>
 
           <div class="card-features">
             <h4>This course includes:</h4>
@@ -323,7 +322,7 @@ const formatDescription = (desc) => {
 .instructor-avatar {
   width: 50px;
   height: 50px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -407,7 +406,7 @@ const formatDescription = (desc) => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
 }
 
@@ -499,7 +498,7 @@ const formatDescription = (desc) => {
 .desc-icon {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -560,7 +559,7 @@ const formatDescription = (desc) => {
 .check-icon {
   width: 24px;
   height: 24px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -594,7 +593,7 @@ const formatDescription = (desc) => {
 .module-number {
   width: 40px;
   height: 40px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border-radius: 10px;
   display: flex;
@@ -730,7 +729,7 @@ const formatDescription = (desc) => {
 .instructor-avatar-large {
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;

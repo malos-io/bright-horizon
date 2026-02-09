@@ -117,7 +117,7 @@ onMounted(async () => {
 }
 
 .highlight {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -157,7 +157,7 @@ onMounted(async () => {
   display: block;
   font-size: 42px;
   font-weight: 800;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -282,7 +282,7 @@ onMounted(async () => {
 
 /* CTA Section */
 .cta {
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   padding: 80px 20px;
   text-align: center;
 }

@@ -240,7 +240,7 @@ function handleClose() {
 .success-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border-radius: 50%;
   display: flex;
@@ -321,7 +321,7 @@ function handleClose() {
 .btn-submit {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #1a5fa4 0%, #e8872a 100%);
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
   border: none;
   border-radius: 10px;
