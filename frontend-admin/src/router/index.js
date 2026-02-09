@@ -4,6 +4,7 @@ import Email from '../views/Email.vue'
 import Staff from '../views/Staff.vue'
 import Login from '../views/Login.vue'
 import AuthCallback from '../views/AuthCallback.vue'
+import ApplicationDetail from '../views/ApplicationDetail.vue'
 
 const routes = [
   {
@@ -22,6 +23,11 @@ const routes = [
     path: '/',
     name: 'Dashboard',
     component: Dashboard,
+  },
+  {
+    path: '/application/:id',
+    name: 'ApplicationDetail',
+    component: ApplicationDetail,
   },
   {
     path: '/email',

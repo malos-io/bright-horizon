@@ -21,38 +21,56 @@
 
     <div class="section">
       <div class="section-header">
-        <h2>Pending Enrollment Applications</h2>
+        <h2>Enrollment Applications</h2>
         <button class="btn-refresh" @click="loadEnrollments">Refresh</button>
       </div>
       <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
+              <th></th>
               <th>Name</th>
               <th>Email</th>
-              <th>Phone</th>
+              <th>Contact</th>
               <th>Course</th>
-              <th>Message</th>
               <th>Status</th>
               <th>Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="enrollment in enrollments" :key="enrollment.id">
-              <td>{{ enrollment.fullName }}</td>
+              <td>
+                <button
+                  class="btn-view"
+                  @click="router.push('/application/' + enrollment.id)"
+                  title="View Application"
+                >
+                  &#128065;
+                </button>
+              </td>
+              <td>{{ enrollment.lastName }}, {{ enrollment.firstName }} {{ enrollment.middleName }}</td>
               <td>{{ enrollment.email }}</td>
-              <td>{{ enrollment.phone }}</td>
+              <td>{{ enrollment.contactNo || enrollment.phone || '--' }}</td>
               <td>{{ enrollment.course }}</td>
-              <td class="message-cell">{{ enrollment.message || '--' }}</td>
               <td>
                 <span class="status-badge" :class="'status-' + enrollment.status">
                   {{ enrollment.status }}
                 </span>
               </td>
               <td>{{ formatDate(enrollment.created_at) }}</td>
+              <td class="actions-cell">
+                <button
+                  class="btn-pdf"
+                  @click="downloadPdf(enrollment.id)"
+                  :disabled="pdfLoading === enrollment.id"
+                >
+                  {{ pdfLoading === enrollment.id ? 'Exporting...' : 'Export Application to PDF' }}
+                </button>
+              </td>
             </tr>
             <tr v-if="enrollments.length === 0">
-              <td colspan="7" class="empty-state">No enrollment applications yet</td>
+              <td colspan="8" class="empty-state">No enrollment applications yet</td>
             </tr>
           </tbody>
         </table>
@@ -90,11 +108,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getCourses, getCategories, getEnrollments } from '../services/api'
+import { useRouter } from 'vue-router'
+import { getCourses, getCategories, getEnrollments, exportEnrollmentPdf } from '../services/api'
 
+const router = useRouter()
 const courses = ref([])
 const categories = ref([])
 const enrollments = ref([])
+const pdfLoading = ref(null)
 
 const pendingCount = computed(() =>
   enrollments.value.filter(e => e.status === 'pending').length
@@ -110,6 +131,18 @@ function formatDate(dateStr) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+async function downloadPdf(id) {
+  pdfLoading.value = id
+  try {
+    await exportEnrollmentPdf(id)
+  } catch (e) {
+    console.error('Failed to export PDF:', e)
+    alert('Failed to export PDF. Please try again.')
+  } finally {
+    pdfLoading.value = null
+  }
 }
 
 async function loadEnrollments() {
@@ -241,13 +274,6 @@ onMounted(async () => {
   background: #f8f9ff;
 }
 
-.message-cell {
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .status-badge {
   display: inline-block;
   padding: 0.2rem 0.6rem;
@@ -270,6 +296,50 @@ onMounted(async () => {
 .status-rejected {
   background: #f8d7da;
   color: #721c24;
+}
+
+.actions-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-view {
+  padding: 0.3rem 0.5rem;
+  font-size: 1rem;
+  background: none;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+}
+
+.btn-view:hover {
+  background: #f0f5ff;
+  border-color: #1a5fa4;
+}
+
+.btn-pdf {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #1a5fa4;
+  background: #e8f0fe;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-pdf:hover:not(:disabled) {
+  background: #d0e2fc;
+}
+
+.btn-pdf:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .empty-state {

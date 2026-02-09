@@ -3,6 +3,7 @@ import Home from '../views/Home.vue'
 import CourseDetail from '../views/CourseDetail.vue'
 import Courses from '../views/Courses.vue'
 import Sponsors from '../views/Sponsors.vue'
+import Apply from '../views/Apply.vue'
 
 const routes = [
   {
@@ -19,6 +20,16 @@ const routes = [
     path: '/sponsors',
     name: 'Sponsors',
     component: Sponsors,
+  },
+  {
+    path: '/apply',
+    name: 'Apply',
+    component: Apply,
+  },
+  {
+    path: '/apply/:courseSlug',
+    name: 'ApplyWithCourse',
+    component: Apply,
   },
   {
     path: '/:slug',

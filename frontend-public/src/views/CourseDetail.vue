@@ -52,7 +52,7 @@
             </span>
           </div>
 
-          <button class="btn btn-primary btn-full" @click="openEnrollModal(course.title)">Enroll Now</button>
+          <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary btn-full">Apply for Class Now</router-link>
           <button class="btn btn-outline btn-full">Download Brochure</button>
 
           <div class="card-features">
@@ -176,7 +176,7 @@
       <div class="mobile-price">
         <span class="current-price">&#8369;{{ formatNumber(course.discounted_price || course.price) }}</span>
       </div>
-      <button class="btn btn-primary" @click="openEnrollModal(course.title)">Enroll Now</button>
+      <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary">Apply for Class Now</router-link>
     </div>
   </div>
 
@@ -189,9 +189,6 @@
 import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getCourse } from '../services/api'
-import { useEnrollmentModal } from '../composables/useEnrollmentModal'
-
-const { open: openEnrollModal } = useEnrollmentModal()
 
 const route = useRoute()
 const course = ref(null)

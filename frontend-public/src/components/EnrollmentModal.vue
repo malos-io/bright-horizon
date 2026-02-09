@@ -3,7 +3,7 @@
     <div v-if="isOpen" class="modal-overlay" @click.self="handleClose">
       <div class="modal-content">
         <div class="modal-header">
-          <h2>Enroll Now</h2>
+          <h2>Apply for Class Now</h2>
           <button class="close-btn" @click="handleClose">&times;</button>
         </div>
 

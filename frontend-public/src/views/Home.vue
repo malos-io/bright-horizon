@@ -86,7 +86,7 @@
     <section class="cta">
       <div class="cta-content">
         <h2>Ready to Start Your Journey?</h2>
-        <p>Enroll now and take the first step towards a better career. Limited slots available!</p>
+        <p>Apply for class now and take the first step towards a better career. Limited slots available!</p>
         <div class="cta-actions">
           <router-link to="/courses" class="btn btn-white">Browse Courses</router-link>
           <a href="#" class="btn btn-outline-white">Contact Us</a>

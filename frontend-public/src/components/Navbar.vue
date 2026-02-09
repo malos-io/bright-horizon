@@ -18,7 +18,7 @@
 
       <div class="nav-actions">
         <button class="btn btn-outline">Login</button>
-        <button class="btn btn-primary" @click="openEnrollModal()">Enroll Now</button>
+        <router-link to="/apply" class="btn btn-primary">Apply for Class Now</router-link>
       </div>
 
       <button class="mobile-menu-btn" @click="toggleMobile">
@@ -35,7 +35,7 @@
       <a href="#" class="nav-link">Contact</a>
       <div class="mobile-actions">
         <button class="btn btn-outline">Login</button>
-        <button class="btn btn-primary" @click="openEnrollModal(); mobileOpen = false">Enroll Now</button>
+        <router-link to="/apply" class="btn btn-primary" @click="mobileOpen = false">Apply for Class Now</router-link>
       </div>
     </div>
   </nav>
@@ -44,9 +44,7 @@
 <script setup>
 import { ref } from 'vue'
 import logo from '@/assets/logo.png'
-import { useEnrollmentModal } from '../composables/useEnrollmentModal'
 
-const { open: openEnrollModal } = useEnrollmentModal()
 const mobileOpen = ref(false)
 
 const toggleMobile = () => {

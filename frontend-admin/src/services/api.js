@@ -96,4 +96,29 @@ export const removeStaff = async (email) => {
   return response.data
 }
 
+export const getEnrollment = async (id) => {
+  const response = await api.get(`/enrollments/${id}`)
+  return response.data
+}
+
+export const updateEnrollment = async (id, fields) => {
+  const response = await api.patch(`/enrollments/${id}`, fields)
+  return response.data
+}
+
+export const exportEnrollmentPdf = async (id) => {
+  const response = await api.get(`/enrollments/${id}/pdf`, { responseType: 'blob' })
+  const disposition = response.headers['content-disposition'] || ''
+  const match = disposition.match(/filename="?(.+?)"?$/)
+  const filename = match ? match[1] : `Tesda Registration ${id}.pdf`
+  const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', filename)
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.URL.revokeObjectURL(url)
+}
+
 export default api
