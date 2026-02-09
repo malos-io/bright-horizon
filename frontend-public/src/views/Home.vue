@@ -22,10 +22,6 @@
             <span class="stat-label">Courses</span>
           </div>
           <div class="stat">
-            <span class="stat-number">95%</span>
-            <span class="stat-label">Job Placement</span>
-          </div>
-          <div class="stat">
             <span class="stat-number">4.8</span>
             <span class="stat-label">Rating</span>
           </div>
@@ -43,11 +39,6 @@
           <div class="feature-icon">&#127891;</div>
           <h3>TESDA Accredited</h3>
           <p>All programs are TESDA-accredited for nationally recognized certifications</p>
-        </div>
-        <div class="feature-card">
-          <div class="feature-icon">&#128188;</div>
-          <h3>Job Placement</h3>
-          <p>Strong industry partnerships ensure employment opportunities for graduates</p>
         </div>
         <div class="feature-card">
           <div class="feature-icon">&#128104;&#8205;&#127891;</div>
@@ -285,10 +276,10 @@ onMounted(async () => {
 }
 
 .features-container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 30px;
 }
 
