@@ -31,6 +31,7 @@
         <div class="workflow-text">
           <strong>Ready for interview?</strong>
           <span>Send the interview schedule email and advance to "Physical Documents &amp; Interview Required".</span>
+          <span class="workflow-hint">Requires an active course batch with a start date. To create one: go to <strong>Courses</strong> &rarr; select this course &rarr; click <strong>"Start A New Class Batch"</strong> &rarr; set a start date and save.</span>
         </div>
         <button class="btn-workflow" @click="handleSendInterview" :disabled="actionLoading">
           {{ actionLoading ? 'Sending...' : 'Send Interview Schedule' }}
@@ -40,6 +41,7 @@
         <div class="workflow-text">
           <strong>Ready to complete enrollment?</strong>
           <span>Send the confirmation email and promote this applicant to a student account.</span>
+          <span class="workflow-hint">Requires all required official document scans to be uploaded.</span>
         </div>
         <button class="btn-workflow btn-workflow-green" @click="handleCompleteEnrollment" :disabled="actionLoading">
           {{ actionLoading ? 'Processing...' : 'Complete Enrollment' }}
@@ -1295,6 +1297,13 @@ onMounted(async () => {
 .workflow-text span {
   font-size: 0.8rem;
   opacity: 0.85;
+}
+
+.workflow-hint {
+  font-size: 0.75rem !important;
+  font-style: italic;
+  opacity: 0.7 !important;
+  margin-top: 4px;
 }
 
 .workflow-interview {
