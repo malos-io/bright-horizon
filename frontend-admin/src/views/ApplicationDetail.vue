@@ -32,6 +32,15 @@
         <span v-else class="status-badge-large" :class="'status-' + statusValue">{{ formatStatusLabel(statusValue) }}</span>
       </div>
 
+      <!-- Sponsor Assignment -->
+      <div class="sponsor-assign" v-if="sponsors.length > 0">
+        <label class="sponsor-label">Sponsor:</label>
+        <select v-model="sponsorValue" @change="handleSponsorChange" class="sponsor-select">
+          <option value="">-- No Sponsor --</option>
+          <option v-for="s in sponsors" :key="s.id" :value="s.id">{{ s.name }} ({{ s.title }})</option>
+        </select>
+      </div>
+
       <!-- Workflow Actions -->
       <div v-if="statusValue === 'in_waitlist'" class="workflow-banner workflow-interview">
         <div class="workflow-text">
@@ -511,7 +520,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment, archiveEnrollment, unarchiveEnrollment } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment, archiveEnrollment, unarchiveEnrollment, getSponsors } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -529,6 +538,8 @@ const docsExpanded = ref(true)
 const changelogExpanded = ref(true)
 const emailsExpanded = ref(true)
 const courses = ref([])
+const sponsors = ref([])
+const sponsorValue = ref('')
 const documentTypes = ref({})
 const documents = ref({})
 const uploading = ref({})
@@ -894,12 +905,29 @@ async function loadEnrollment() {
     enrollment.value = await getEnrollment(route.params.id)
     // Map legacy "pending" to "pending_upload" for the dropdown
     statusValue.value = enrollment.value.status === 'pending' ? 'pending_upload' : (enrollment.value.status || 'pending_upload')
+    sponsorValue.value = enrollment.value.sponsor_id || ''
     populateFormData(enrollment.value)
   } catch (e) {
     console.error('Failed to load enrollment:', e)
     enrollment.value = null
   } finally {
     loading.value = false
+  }
+}
+
+async function handleSponsorChange() {
+  const newId = sponsorValue.value
+  const sponsor = sponsors.value.find(s => s.id === newId)
+  try {
+    await updateEnrollment(route.params.id, {
+      sponsor_id: newId || '',
+      sponsor_name: sponsor?.name || '',
+    })
+    await loadEnrollment()
+  } catch (e) {
+    console.error('Failed to update sponsor:', e)
+    alert('Failed to assign sponsor')
+    sponsorValue.value = enrollment.value?.sponsor_id || ''
   }
 }
 
@@ -910,6 +938,11 @@ onMounted(async () => {
     courses.value = await getCourses()
   } catch (e) {
     console.error('Failed to load courses:', e)
+  }
+  try {
+    sponsors.value = await getSponsors()
+  } catch (e) {
+    console.error('Failed to load sponsors:', e)
   }
 })
 </script>
@@ -1314,6 +1347,42 @@ onMounted(async () => {
   font-size: 0.82rem;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* ── Sponsor assignment ── */
+
+.sponsor-assign {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.sponsor-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.sponsor-select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #333;
+  background: white;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.sponsor-select:focus {
+  outline: none;
+  border-color: #1a5fa4;
 }
 
 /* ── Workflow actions ── */

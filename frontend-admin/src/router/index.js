@@ -9,6 +9,8 @@ import StudentDetail from '../views/StudentDetail.vue'
 import Login from '../views/Login.vue'
 import AuthCallback from '../views/AuthCallback.vue'
 import ApplicationDetail from '../views/ApplicationDetail.vue'
+import Sponsors from '../views/Sponsors.vue'
+import SponsorScholars from '../views/SponsorScholars.vue'
 
 const routes = [
   {
@@ -62,6 +64,16 @@ const routes = [
     path: '/staff',
     name: 'Staff',
     component: Staff,
+  },
+  {
+    path: '/sponsors',
+    name: 'Sponsors',
+    component: Sponsors,
+  },
+  {
+    path: '/sponsors/:id/scholars',
+    name: 'SponsorScholars',
+    component: SponsorScholars,
   },
 ]
 

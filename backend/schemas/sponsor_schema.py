@@ -7,6 +7,7 @@ class Sponsor(BaseModel):
     name: str
     title: str
     position: Optional[str] = None
-    image: str
+    image: Optional[str] = None
     scholars_sponsored: int
     message: Optional[str] = None
+    order: int = 0

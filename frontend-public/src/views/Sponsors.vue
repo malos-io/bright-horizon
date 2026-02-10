@@ -4,12 +4,12 @@
     <section class="sponsors-hero">
       <div class="hero-content">
         <h1>Our <span class="highlight">Sponsors</span></h1>
-        <p>We are grateful to our sponsors who believe in empowering Filipino youth through education and skills training.</p>
+        <p>We are grateful to our sponsors who believe in empowering individuals through education and skills training.</p>
       </div>
     </section>
 
     <!-- Stats Section -->
-    <section class="stats-section">
+    <section v-if="sponsors.length > 0" class="stats-section">
       <div class="stats-container">
         <div class="stat-card">
           <span class="stat-number">{{ totalScholars }}</span>
@@ -36,7 +36,14 @@
       <div class="sponsors-grid" v-if="sponsors.length > 0">
         <div v-for="sponsor in sponsors" :key="sponsor.id" class="sponsor-card">
           <div class="sponsor-image">
-            <img :src="sponsor.image" :alt="sponsor.name" />
+            <img v-if="sponsor.image" :src="sponsor.image" :alt="sponsor.name" />
+            <div v-else class="sponsor-placeholder">
+              <svg viewBox="0 0 200 250" xmlns="http://www.w3.org/2000/svg">
+                <rect width="200" height="250" fill="#e8ecf1"/>
+                <circle cx="100" cy="90" r="35" fill="#c5cdd8"/>
+                <ellipse cx="100" cy="190" rx="55" ry="40" fill="#c5cdd8"/>
+              </svg>
+            </div>
           </div>
           <div class="sponsor-info">
             <h3>{{ sponsor.name }}</h3>
@@ -53,8 +60,11 @@
         </div>
       </div>
 
-      <div v-else class="loading">
-        <p>Loading sponsors...</p>
+      <div v-else class="no-sponsors">
+        <div class="no-sponsors-icon">&#129309;</div>
+        <h3>Be Our First Sponsor!</h3>
+        <p>Help empower individuals through education and skills training. Your support can change lives and build brighter futures in our community.</p>
+        <a href="#" class="btn btn-blue">Get in Touch</a>
       </div>
     </section>
 
@@ -62,7 +72,7 @@
     <section class="cta">
       <div class="cta-content">
         <h2>Become a Sponsor</h2>
-        <p>Help us empower more Filipinos through skills training. Your support can change lives.</p>
+        <p>Help us empower more individuals through skills training. Your support can change lives.</p>
         <div class="cta-actions">
           <a href="#" class="btn btn-white">Contact Us</a>
         </div>
@@ -327,10 +337,54 @@ onMounted(async () => {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.loading {
+.sponsor-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8ecf1;
+}
+
+.sponsor-placeholder svg {
+  width: 100%;
+  height: 100%;
+}
+
+.no-sponsors {
   text-align: center;
-  padding: 40px;
+  padding: 60px 20px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.no-sponsors-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.no-sponsors h3 {
+  font-size: 28px;
+  font-weight: 800;
+  color: #1a1a2e;
+  margin-bottom: 15px;
+}
+
+.no-sponsors p {
+  font-size: 16px;
   color: #666;
+  line-height: 1.7;
+  margin-bottom: 25px;
+}
+
+.btn-blue {
+  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
+  color: white;
+}
+
+.btn-blue:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(26, 95, 164, 0.3);
 }
 
 /* Responsive */

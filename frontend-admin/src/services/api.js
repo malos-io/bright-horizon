@@ -214,4 +214,40 @@ export const exportEnrollmentPdf = async (id) => {
   window.URL.revokeObjectURL(url)
 }
 
+// ── Sponsor CRUD ──
+
+export const getSponsors = async () => {
+  const response = await api.get('/sponsors')
+  return response.data
+}
+
+export const createSponsor = async (formData) => {
+  const response = await api.post('/sponsors', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return response.data
+}
+
+export const updateSponsor = async (id, formData) => {
+  const response = await api.put(`/sponsors/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return response.data
+}
+
+export const deleteSponsor = async (id) => {
+  const response = await api.delete(`/sponsors/${id}`)
+  return response.data
+}
+
+export const getSponsorScholars = async (sponsorId) => {
+  const response = await api.get(`/sponsors/${sponsorId}/scholars`)
+  return response.data
+}
+
+export const reorderSponsors = async (orderList) => {
+  const response = await api.patch('/sponsors/reorder', { order: orderList })
+  return response.data
+}
+
 export default api

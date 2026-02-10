@@ -311,6 +311,11 @@ def update_enrollment(
 
         doc_ref.update(updates)
 
+        # If sponsor assignment changed, invalidate sponsors cache (scholars count)
+        if "sponsor_id" in updates:
+            from routers.sponsor_router import _invalidate_sponsors_cache
+            _invalidate_sponsors_cache()
+
         return {"message": f"{len(changelog_entries)} field(s) updated", "changes": changelog_entries}
     except HTTPException:
         raise

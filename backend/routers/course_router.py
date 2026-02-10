@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, HTTPException
@@ -195,16 +196,26 @@ This TESDA-accredited qualification prepares you for careers in the tourism and 
 _COURSES_BY_SLUG = {c.slug: c for c in COURSES}
 
 
-# ── Batch-based course overrides ──────────────────────────────────────
+# ── Batch-based course overrides (cached) ────────────────────────────
+
+_overrides_cache: dict | None = None
+_overrides_cache_ts: float = 0
+_OVERRIDES_TTL = 86400  # 24 hours
 
 
 def _get_course_overrides() -> dict:
     """Read active/enrollment_closed batches as course overrides.
 
-    This replaces the old course_overrides collection. The active batch
-    for each course IS the source of truth for start_dates, instructor,
-    and enrollment_deadline on the public page and Dashboard.
+    Results are cached for 10 minutes to avoid hitting Firestore on
+    every public page load. Admin batch mutations (create/edit/close)
+    call _invalidate_overrides_cache() to force a refresh.
     """
+    global _overrides_cache, _overrides_cache_ts
+
+    now = time.monotonic()
+    if _overrides_cache is not None and (now - _overrides_cache_ts) < _OVERRIDES_TTL:
+        return _overrides_cache
+
     try:
         collection = get_collection_name("course_batches")
         docs = (
@@ -226,10 +237,20 @@ def _get_course_overrides() -> dict:
             if data.get("instructor"):
                 override["instructor"] = data["instructor"]
             result[slug] = override
+
+        _overrides_cache = result
+        _overrides_cache_ts = now
         return result
     except Exception as e:
         logger.warning("Failed to fetch course overrides from batches: %s", e)
-        return {}
+        return _overrides_cache or {}
+
+
+def _invalidate_overrides_cache():
+    """Force the next _get_course_overrides() call to hit Firestore."""
+    global _overrides_cache, _overrides_cache_ts
+    _overrides_cache = None
+    _overrides_cache_ts = 0
 
 
 def _apply_overrides(course: Course, overrides: dict) -> Course:
@@ -398,6 +419,7 @@ def create_batch(slug: str, body: dict = Body(...), admin: dict = Depends(verify
     collection = get_collection_name("course_batches")
     _, doc_ref = db.collection(collection).add(batch_data)
 
+    _invalidate_overrides_cache()
     return {"message": "Batch created", "batch_id": doc_ref.id}
 
 
@@ -438,6 +460,7 @@ def edit_batch(slug: str, batch_id: str, body: dict = Body(...), _admin: dict = 
     updates["updated_at"] = firestore.SERVER_TIMESTAMP
     doc_ref.update(updates)
 
+    _invalidate_overrides_cache()
     return {"message": "Batch updated"}
 
 
@@ -498,6 +521,7 @@ def close_batch_enrollment(slug: str, batch_id: str, admin: dict = Depends(verif
         })
         reverted_count += 1
 
+    _invalidate_overrides_cache()
     return {
         "message": "Enrollment closed",
         "reverted_to_waitlist": reverted_count,
@@ -529,6 +553,7 @@ def close_batch(slug: str, batch_id: str, _admin: dict = Depends(verify_jwt)):
         "updated_at": firestore.SERVER_TIMESTAMP,
     })
 
+    _invalidate_overrides_cache()
     return {"message": "Batch closed. Course reverts to TBA."}
 
 

@@ -31,6 +31,10 @@
             <span class="nav-icon">&#9881;</span>
             Users
           </router-link>
+          <router-link to="/sponsors" class="nav-item">
+            <span class="nav-icon">&#9829;</span>
+            Sponsors
+          </router-link>
         </nav>
       </aside>
       <main class="main-content">
