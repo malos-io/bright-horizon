@@ -42,6 +42,7 @@ _VALID_SOURCES = {"applicant", "official"}
 ENROLLMENT_STATUSES = {
     "pending_upload", "pending_review", "documents_rejected",
     "in_waitlist", "physical_docs_required", "completed",
+    "archived",
     "pending",  # legacy alias
 }
 
@@ -1053,4 +1054,88 @@ def get_my_classes(applicant: dict = Depends(verify_applicant_jwt)):
         raise
     except Exception as e:
         logger.exception("Failed to fetch student classes")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/enrollments/{enrollment_id}/archive")
+def archive_enrollment(
+    enrollment_id: str,
+    admin: dict = Depends(verify_jwt),
+):
+    """Archive an enrollment application (soft-delete)."""
+    try:
+        collection = get_collection_name("pending_enrollment_application")
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        current = doc.to_dict()
+        if current.get("status") == "archived":
+            return {"message": "Already archived"}
+
+        admin_email = admin.get("sub", "unknown")
+        now = datetime.now(timezone.utc).isoformat()
+
+        doc_ref.update({
+            "status": "archived",
+            "previous_status": current.get("status", "pending_upload"),
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": current.get("changelog", []) + [{
+                "field": "status",
+                "oldValue": current.get("status", ""),
+                "newValue": "archived",
+                "updatedBy": admin_email,
+                "updatedAt": now,
+            }],
+        })
+
+        return {"message": "Enrollment archived"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to archive enrollment")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/enrollments/{enrollment_id}/unarchive")
+def unarchive_enrollment(
+    enrollment_id: str,
+    admin: dict = Depends(verify_jwt),
+):
+    """Restore an archived enrollment to its previous status."""
+    try:
+        collection = get_collection_name("pending_enrollment_application")
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        current = doc.to_dict()
+        if current.get("status") != "archived":
+            return {"message": "Enrollment is not archived"}
+
+        restored_status = current.get("previous_status", "pending_upload")
+        admin_email = admin.get("sub", "unknown")
+        now = datetime.now(timezone.utc).isoformat()
+
+        doc_ref.update({
+            "status": restored_status,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": current.get("changelog", []) + [{
+                "field": "status",
+                "oldValue": "archived",
+                "newValue": restored_status,
+                "updatedBy": admin_email,
+                "updatedAt": now,
+            }],
+        })
+
+        return {"message": f"Enrollment restored to {restored_status}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to unarchive enrollment")
         raise HTTPException(status_code=500, detail=str(e))

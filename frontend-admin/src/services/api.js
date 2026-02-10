@@ -96,6 +96,16 @@ export const completeEnrollment = async (enrollmentId) => {
   return response.data
 }
 
+export const archiveEnrollment = async (enrollmentId) => {
+  const response = await api.post(`/enrollments/${enrollmentId}/archive`)
+  return response.data
+}
+
+export const unarchiveEnrollment = async (enrollmentId) => {
+  const response = await api.post(`/enrollments/${enrollmentId}/unarchive`)
+  return response.data
+}
+
 export const getInbox = async (limit = 20, start = 1) => {
   const response = await api.get('/email/inbox', { params: { limit, start } })
   return response.data

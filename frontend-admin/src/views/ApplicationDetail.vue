@@ -4,6 +4,12 @@
     <div class="detail-header">
       <button class="btn-back" @click="router.push('/')">&#8592; Back to Dashboard</button>
       <div class="header-actions">
+        <button v-if="statusValue === 'archived'" class="btn-unarchive" @click="handleUnarchive" :disabled="actionLoading">
+          {{ actionLoading ? 'Restoring...' : 'Unarchive' }}
+        </button>
+        <button v-else class="btn-archive" @click="handleArchive" :disabled="actionLoading">
+          {{ actionLoading ? 'Archiving...' : 'Archive' }}
+        </button>
         <button class="btn-export" @click="downloadPdf" :disabled="pdfLoading">
           {{ pdfLoading ? 'Exporting...' : 'Export Application to PDF' }}
         </button>
@@ -52,6 +58,15 @@
           <strong>Enrollment completed</strong>
           <span>This applicant has been promoted to a student account.</span>
         </div>
+      </div>
+      <div v-else-if="statusValue === 'archived'" class="workflow-banner workflow-archived">
+        <div class="workflow-text">
+          <strong>This application is archived</strong>
+          <span>It is hidden from the dashboard and the applicant's tracker. Click "Unarchive" to restore it.</span>
+        </div>
+        <button class="btn-workflow" @click="handleUnarchive" :disabled="actionLoading">
+          {{ actionLoading ? 'Restoring...' : 'Unarchive' }}
+        </button>
       </div>
 
       <!-- Application Form Section -->
@@ -496,7 +511,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment, archiveEnrollment, unarchiveEnrollment } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -528,6 +543,7 @@ const enrollmentStatuses = [
   { value: 'in_waitlist', label: 'In Waitlist' },
   { value: 'physical_docs_required', label: 'Physical Documents and Interview Required' },
   { value: 'completed', label: 'Completed' },
+  { value: 'archived', label: 'Archived' },
 ]
 
 // Statuses where the dropdown is editable (before workflow buttons take over)
@@ -764,6 +780,33 @@ async function handleCompleteEnrollment() {
   }
 }
 
+async function handleArchive() {
+  if (!confirm(`Archive the application for ${enrollment.value.firstName} ${enrollment.value.lastName}? This will hide it from the dashboard and the applicant's tracker.`)) return
+  actionLoading.value = true
+  try {
+    await archiveEnrollment(route.params.id)
+    await loadEnrollment()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to archive.'
+    alert(msg)
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function handleUnarchive() {
+  actionLoading.value = true
+  try {
+    await unarchiveEnrollment(route.params.id)
+    await loadEnrollment()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to unarchive.'
+    alert(msg)
+  } finally {
+    actionLoading.value = false
+  }
+}
+
 function getDocReviewStatus(docType) {
   return documents.value[docType]?.review?.status || 'pending'
 }
@@ -953,6 +996,7 @@ onMounted(async () => {
 .status-pending_review { background: #e3f2fd; color: #1565c0; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
+.status-archived { background: #e0e0e0; color: #616161; }
 
 .status-select {
   padding: 0.3rem 0.8rem;
@@ -1345,6 +1389,42 @@ onMounted(async () => {
   color: #166534;
   border: 1px solid #bbf7d0;
 }
+
+.workflow-archived {
+  background: #f5f5f5;
+  color: #616161;
+  border: 1px solid #e0e0e0;
+}
+
+.btn-archive {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #616161;
+  background: #e0e0e0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-archive:hover:not(:disabled) { background: #ccc; }
+.btn-archive:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-unarchive {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1a5fa4;
+  background: #e8f0fe;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-unarchive:hover:not(:disabled) { background: #d0e2fc; }
+.btn-unarchive:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Email history ── */
 

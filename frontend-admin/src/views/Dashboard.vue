@@ -21,10 +21,13 @@
 
     <div class="section">
       <div class="section-header">
-        <h2>{{ showAllEnrollments ? 'All Enrollment Applications' : 'Active Enrollment Applications' }}</h2>
+        <h2>{{ showArchived ? 'Archived Applications' : showAllEnrollments ? 'All Enrollment Applications' : 'Active Enrollment Applications' }}</h2>
         <div class="section-header-actions">
           <button class="btn-refresh" @click="showAllEnrollments = !showAllEnrollments">
             {{ showAllEnrollments ? 'Active Only' : 'See All' }}
+          </button>
+          <button v-if="archivedCount > 0" class="btn-refresh btn-archived-toggle" @click="showArchived = !showArchived">
+            {{ showArchived ? 'Hide Archived' : `Archived (${archivedCount})` }}
           </button>
           <button class="btn-refresh" @click="loadEnrollments">Refresh</button>
         </div>
@@ -128,6 +131,7 @@ const enrollments = ref([])
 const sendingInterview = ref(null)
 const completingEnrollment = ref(null)
 const showAllEnrollments = ref(false)
+const showArchived = ref(false)
 
 function formatStartDate(startDates) {
   const val = (startDates && startDates.length) ? startDates[0] : ''
@@ -143,10 +147,19 @@ const pendingCount = computed(() =>
   ).length
 )
 
-const displayedEnrollments = computed(() =>
-  showAllEnrollments.value
-    ? enrollments.value
-    : enrollments.value.filter(e => e.status !== 'completed')
+const displayedEnrollments = computed(() => {
+  if (showArchived.value) {
+    return enrollments.value.filter(e => e.status === 'archived')
+  }
+  let list = enrollments.value.filter(e => e.status !== 'archived')
+  if (!showAllEnrollments.value) {
+    list = list.filter(e => e.status !== 'completed')
+  }
+  return list
+})
+
+const archivedCount = computed(() =>
+  enrollments.value.filter(e => e.status === 'archived').length
 )
 
 function formatStatus(status) {
@@ -158,6 +171,7 @@ function formatStatus(status) {
     in_waitlist: 'In Waitlist',
     physical_docs_required: 'Physical Documents and Interview Required',
     completed: 'Completed',
+    archived: 'Archived',
   }
   return map[status] || status
 }
@@ -319,6 +333,15 @@ onMounted(async () => {
   background: #d0e2fc;
 }
 
+.btn-archived-toggle {
+  color: #616161;
+  background: #e0e0e0;
+}
+
+.btn-archived-toggle:hover {
+  background: #ccc;
+}
+
 .table-container {
   overflow-x: auto;
 }
@@ -381,6 +404,7 @@ onMounted(async () => {
 .status-in_waitlist { background: #d4edda; color: #155724; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
+.status-archived { background: #e0e0e0; color: #616161; }
 
 .btn-detail {
   padding: 0.3rem 0.75rem;

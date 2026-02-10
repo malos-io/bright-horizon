@@ -137,6 +137,9 @@ async def verify_otp(request: OtpVerifyRequest):
     applications = []
     for doc in docs:
         data = doc.to_dict()
+        # Skip archived applications — hidden from applicant view
+        if data.get("status") == "archived":
+            continue
         created_at = data.get("created_at")
         if created_at and hasattr(created_at, "isoformat"):
             created_at = created_at.isoformat()
