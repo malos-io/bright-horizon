@@ -66,8 +66,8 @@ export function useAddressDropdown({ withBarangay = true } = {}) {
     if (newCity && withBarangay) {
       barangayLoading.value = true
       try {
-        const response = await api.get(`/address/barangays/${encodeURIComponent(newCity)}`)
-        barangayOptions.value = response.data
+        const response = await api.get('/address/barangays', { params: { city: newCity } })
+        barangayOptions.value = Array.isArray(response.data) ? response.data : []
       } catch {
         barangayOptions.value = []
       } finally {
