@@ -15,6 +15,14 @@
             <span class="nav-icon">&#9632;</span>
             Dashboard
           </router-link>
+          <router-link to="/courses" class="nav-item">
+            <span class="nav-icon">&#9733;</span>
+            Courses
+          </router-link>
+          <router-link to="/students" class="nav-item">
+            <span class="nav-icon">&#9998;</span>
+            Students
+          </router-link>
           <router-link to="/email" class="nav-item">
             <span class="nav-icon">&#9993;</span>
             Email

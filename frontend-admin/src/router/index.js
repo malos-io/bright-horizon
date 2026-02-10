@@ -1,7 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from '../views/Dashboard.vue'
+import Courses from '../views/Courses.vue'
+import CourseDetail from '../views/CourseDetail.vue'
 import Email from '../views/Email.vue'
 import Staff from '../views/Staff.vue'
+import Students from '../views/Students.vue'
+import StudentDetail from '../views/StudentDetail.vue'
 import Login from '../views/Login.vue'
 import AuthCallback from '../views/AuthCallback.vue'
 import ApplicationDetail from '../views/ApplicationDetail.vue'
@@ -25,6 +29,16 @@ const routes = [
     component: Dashboard,
   },
   {
+    path: '/courses',
+    name: 'Courses',
+    component: Courses,
+  },
+  {
+    path: '/courses/:slug',
+    name: 'CourseDetail',
+    component: CourseDetail,
+  },
+  {
     path: '/application/:id',
     name: 'ApplicationDetail',
     component: ApplicationDetail,
@@ -33,6 +47,16 @@ const routes = [
     path: '/email',
     name: 'Email',
     component: Email,
+  },
+  {
+    path: '/students',
+    name: 'Students',
+    component: Students,
+  },
+  {
+    path: '/students/:id',
+    name: 'StudentDetail',
+    component: StudentDetail,
   },
   {
     path: '/staff',

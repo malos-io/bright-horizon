@@ -37,6 +37,7 @@ class Course(BaseModel):
     certification: str
     class_size: int
     start_dates: list[str]
+    enrollment_deadline: Optional[str] = None
     schedule: list[CourseSchedule]
     modules: list[CourseModule]
     requirements: list[str]

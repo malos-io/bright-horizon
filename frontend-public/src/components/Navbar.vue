@@ -61,7 +61,7 @@
 import { ref } from 'vue'
 import logo from '@/assets/logo.png'
 
-const studentUrl = import.meta.env.VITE_STUDENT_URL || '/student/'
+const studentUrl = import.meta.env.VITE_STUDENT_URL || 'http://localhost:5175'
 const mobileOpen = ref(false)
 
 const toggleMobile = () => {

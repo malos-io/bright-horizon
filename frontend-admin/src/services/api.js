@@ -56,6 +56,26 @@ export const getCourse = async (slug) => {
   return response.data
 }
 
+export const createBatch = async (slug, data) => {
+  const response = await api.post(`/courses/${slug}/batches`, data)
+  return response.data
+}
+
+export const editBatch = async (slug, batchId, data) => {
+  const response = await api.patch(`/courses/${slug}/batches/${batchId}`, data)
+  return response.data
+}
+
+export const closeBatchEnrollment = async (slug, batchId) => {
+  const response = await api.post(`/courses/${slug}/batches/${batchId}/close-enrollment`)
+  return response.data
+}
+
+export const closeBatch = async (slug, batchId) => {
+  const response = await api.post(`/courses/${slug}/batches/${batchId}/close`)
+  return response.data
+}
+
 export const getCategories = async () => {
   const response = await api.get('/categories')
   return response.data
@@ -66,6 +86,16 @@ export const getEnrollments = async () => {
   return response.data
 }
 
+export const sendInterviewSchedule = async (enrollmentId) => {
+  const response = await api.post(`/enrollments/${enrollmentId}/send-interview-schedule`)
+  return response.data
+}
+
+export const completeEnrollment = async (enrollmentId) => {
+  const response = await api.post(`/enrollments/${enrollmentId}/complete`)
+  return response.data
+}
+
 export const getInbox = async (limit = 20, start = 1) => {
   const response = await api.get('/email/inbox', { params: { limit, start } })
   return response.data
@@ -73,6 +103,31 @@ export const getInbox = async (limit = 20, start = 1) => {
 
 export const getMessage = async (folderId, messageId) => {
   const response = await api.get(`/email/messages/${folderId}/${messageId}`)
+  return response.data
+}
+
+export const getCoursesSummary = async () => {
+  const response = await api.get('/courses-summary')
+  return response.data
+}
+
+export const getCourseBatches = async (slug) => {
+  const response = await api.get(`/courses/${slug}/batches`)
+  return response.data
+}
+
+export const getStudents = async () => {
+  const response = await api.get('/students')
+  return response.data
+}
+
+export const getStudentDetail = async (id) => {
+  const response = await api.get(`/students/${id}`)
+  return response.data
+}
+
+export const updateStudentEmail = async (id, newEmail) => {
+  const response = await api.patch(`/students/${id}/email`, { new_email: newEmail })
   return response.data
 }
 

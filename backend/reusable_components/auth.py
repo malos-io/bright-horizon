@@ -10,7 +10,7 @@ security = HTTPBearer()
 JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_MINUTES = 60  # 1 hour sliding window
-APPLICANT_JWT_EXPIRY_MINUTES = 30
+APPLICANT_JWT_EXPIRY_MINUTES = 480  # 8 hours
 
 
 def create_jwt(user_data: dict) -> str:

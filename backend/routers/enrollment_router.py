@@ -9,6 +9,14 @@ from schemas.enrollment_schema import EnrollmentApplication
 from reusable_components.firebase import db, get_collection_name
 from reusable_components.auth import verify_jwt, verify_applicant_jwt
 from reusable_components.gcloud_storage_helper import upload_file, delete_file, get_applicant_folder, generate_signed_url
+from reusable_components.email_notification_helper import send_email
+from email_templates.document_rejected import get_document_rejected_email_html
+from email_templates.in_waitlist import get_in_waitlist_email_html
+from email_templates.application_submitted import get_application_submitted_email_html
+from email_templates.interview_schedule import get_interview_schedule_email_html
+from email_templates.enrollment_completed import get_enrollment_completed_email_html
+
+NOTIFICATION_FROM = "notifications@brighthii.com"
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -33,7 +41,7 @@ _VALID_SOURCES = {"applicant", "official"}
 
 ENROLLMENT_STATUSES = {
     "pending_upload", "pending_review", "documents_rejected",
-    "documents_accepted", "physical_docs_required", "completed",
+    "in_waitlist", "physical_docs_required", "completed",
     "pending",  # legacy alias
 }
 
@@ -41,11 +49,14 @@ ENROLLMENT_STATUSES = {
 _AUTO_STATUSES = {"pending", "pending_upload", "pending_review", "documents_rejected"}
 
 
-def _recompute_enrollment_status(doc_ref, data: dict):
-    """Auto-advance enrollment status based on document review states."""
+def _recompute_enrollment_status(doc_ref, data: dict) -> str | None:
+    """Auto-advance enrollment status based on document review states.
+
+    Returns the new status string if changed, or None if unchanged.
+    """
     current_status = data.get("status", "pending_upload")
     if current_status not in _AUTO_STATUSES:
-        return  # Don't regress manual overrides
+        return None  # Don't regress manual overrides
 
     documents = data.get("documents", {})
     all_required_uploaded = True
@@ -71,7 +82,7 @@ def _recompute_enrollment_status(doc_ref, data: dict):
     if any_rejected:
         new_status = "documents_rejected"
     elif all_required_accepted:
-        new_status = "documents_accepted"
+        new_status = "in_waitlist"
     elif all_required_uploaded:
         new_status = "pending_review"
     else:
@@ -79,6 +90,8 @@ def _recompute_enrollment_status(doc_ref, data: dict):
 
     if new_status != current_status:
         doc_ref.update({"status": new_status, "updated_at": firestore.SERVER_TIMESTAMP})
+        return new_status
+    return None
 
 
 def _build_birthdate(data: dict) -> str:
@@ -149,7 +162,7 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
 
 @router.post("/enrollments")
 @limiter.limit("5/minute")
-def submit_enrollment(request: Request, application: EnrollmentApplication):
+async def submit_enrollment(request: Request, application: EnrollmentApplication):
     try:
         collection = get_collection_name("pending_enrollment_application")
         doc_data = application.model_dump()
@@ -159,17 +172,34 @@ def submit_enrollment(request: Request, application: EnrollmentApplication):
         doc_ref = db.collection(collection).add(doc_data)
         doc_id = doc_ref[1].id
 
-        # Create student_users record with 'applicant' role
+        # Create student_users record with 'applicant' role (auto-generated ID)
         student_collection = get_collection_name("student_users")
-        student_doc = db.collection(student_collection).document(application.email).get()
-        if not student_doc.exists:
-            db.collection(student_collection).document(application.email).set({
+        existing = list(
+            db.collection(student_collection)
+            .where("email", "==", application.email)
+            .limit(1)
+            .stream()
+        )
+        if not existing:
+            db.collection(student_collection).add({
                 "email": application.email,
                 "firstName": application.firstName,
                 "lastName": application.lastName,
                 "role": "applicant",
                 "created_at": firestore.SERVER_TIMESTAMP,
             })
+
+        # Send confirmation email with process overview
+        try:
+            html = get_application_submitted_email_html(application.firstName, application.course)
+            await send_email(
+                to=application.email,
+                subject=f"Application Received: {application.course} - Bright Horizons Institute",
+                html_content=html,
+                from_email=NOTIFICATION_FROM,
+            )
+        except Exception as email_err:
+            logger.warning("Failed to send submission confirmation email to %s: %s", application.email, email_err)
 
         return {"message": "Application submitted successfully", "id": doc_id}
     except Exception as e:
@@ -271,6 +301,231 @@ def update_enrollment(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.post("/enrollments/{enrollment_id}/send-interview-schedule")
+async def send_interview_schedule(
+    enrollment_id: str,
+    admin: dict = Depends(verify_jwt),
+):
+    """Send interview schedule email to a waitlisted applicant and update status."""
+    from routers.course_router import get_courses
+
+    try:
+        collection = get_collection_name("pending_enrollment_application")
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        data = doc.to_dict()
+        status = data.get("status", "")
+        if status != "in_waitlist":
+            raise HTTPException(status_code=400, detail="Enrollment is not in waitlist status")
+
+        applicant_email = data.get("email", "")
+        applicant_name = data.get("firstName", "Applicant")
+        course_name = data.get("course", "")
+
+        if not applicant_email:
+            raise HTTPException(status_code=400, detail="Applicant has no email address")
+
+        # Look up course data for start date and enrollment deadline
+        courses = get_courses()
+        course_data = next((c for c in courses if c.title == course_name), None)
+
+        if not course_data:
+            raise HTTPException(status_code=400, detail=f"Course '{course_name}' not found")
+
+        start_date_raw = course_data.start_dates[0] if course_data.start_dates else None
+        if not start_date_raw or start_date_raw == "TBA":
+            raise HTTPException(
+                status_code=400,
+                detail="Course has no start date set. Please create an active course batch first.",
+            )
+
+        # Format dates for email
+        from datetime import date as date_cls
+        def _fmt(d: str) -> str:
+            try:
+                parsed = date_cls.fromisoformat(d)
+                return parsed.strftime("%B %d, %Y")
+            except ValueError:
+                return d
+
+        start_date_fmt = _fmt(start_date_raw)
+        deadline_fmt = _fmt(course_data.enrollment_deadline) if course_data.enrollment_deadline else None
+
+        html = get_interview_schedule_email_html(
+            name=applicant_name,
+            course=course_name,
+            start_date=start_date_fmt,
+            enrollment_deadline=deadline_fmt,
+        )
+        await send_email(
+            to=applicant_email,
+            subject=f"Interview & Enrollment Schedule: {course_name} - Bright Horizons Institute",
+            html_content=html,
+            from_email=NOTIFICATION_FROM,
+        )
+
+        # Update status to physical_docs_required
+        admin_email = admin.get("sub", "unknown")
+        now = datetime.now(timezone.utc).isoformat()
+        existing_changelog = data.get("changelog", [])
+        doc_ref.update({
+            "status": "physical_docs_required",
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": existing_changelog + [{
+                "field": "status",
+                "oldValue": status,
+                "newValue": "physical_docs_required",
+                "updatedBy": admin_email,
+                "updatedAt": now,
+                "note": "Interview schedule email sent",
+            }],
+        })
+
+        return {"message": f"Interview schedule email sent to {applicant_email}"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to send interview schedule")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/enrollments/{enrollment_id}/complete")
+async def complete_enrollment(
+    enrollment_id: str,
+    admin: dict = Depends(verify_jwt),
+):
+    """Complete an enrollment and promote the applicant to a student account."""
+    from routers.course_router import get_courses, _get_active_batch, _COURSES_BY_SLUG
+
+    try:
+        collection = get_collection_name("pending_enrollment_application")
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        data = doc.to_dict()
+        status = data.get("status", "")
+        if status != "physical_docs_required":
+            raise HTTPException(
+                status_code=400,
+                detail="Enrollment must be in 'Physical Documents and Interview Required' status to complete.",
+            )
+
+        # Require official scans for all required documents
+        documents = data.get("documents", {})
+        missing_scans = []
+        for doc_type, info in REQUIRED_DOCUMENTS.items():
+            if not info["required"]:
+                continue
+            doc_data = documents.get(doc_type, {})
+            if not doc_data.get("official_scan"):
+                missing_scans.append(info["label"])
+        if missing_scans:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Official scans are required before completing enrollment. Missing: {', '.join(missing_scans)}",
+            )
+
+        applicant_email = data.get("email", "")
+        applicant_name = data.get("firstName", "Applicant")
+        course_name = data.get("course", "")
+
+        # Look up course and active batch for batch stamping
+        courses = get_courses()
+        course_data = next((c for c in courses if c.title == course_name), None)
+        course_obj = next((c for c in _COURSES_BY_SLUG.values() if c.title == course_name), None)
+        active_batch = _get_active_batch(course_obj.slug) if course_obj else None
+        batch_id = active_batch.id if active_batch else None
+        batch_start_date = None
+        if course_data and course_data.start_dates and course_data.start_dates[0] != "TBA":
+            batch_start_date = course_data.start_dates[0]
+
+        # Update enrollment status to completed
+        admin_email = admin.get("sub", "unknown")
+        now = datetime.now(timezone.utc).isoformat()
+        existing_changelog = data.get("changelog", [])
+        doc_ref.update({
+            "status": "completed",
+            "batch_id": batch_id,
+            "batch_start_date": batch_start_date,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": existing_changelog + [{
+                "field": "status",
+                "oldValue": status,
+                "newValue": "completed",
+                "updatedBy": admin_email,
+                "updatedAt": now,
+                "note": "Enrollment completed, student account activated",
+            }],
+        })
+
+        # Promote student_users role from 'applicant' to 'student'
+        student_collection = get_collection_name("student_users")
+        if applicant_email:
+            existing_students = list(
+                db.collection(student_collection)
+                .where("email", "==", applicant_email)
+                .limit(1)
+                .stream()
+            )
+            if existing_students:
+                existing_students[0].reference.update({
+                    "role": "student",
+                    "updated_at": firestore.SERVER_TIMESTAMP,
+                })
+            else:
+                # Create student record if it doesn't exist
+                db.collection(student_collection).add({
+                    "email": applicant_email,
+                    "firstName": data.get("firstName", ""),
+                    "lastName": data.get("lastName", ""),
+                    "role": "student",
+                    "created_at": firestore.SERVER_TIMESTAMP,
+                })
+
+        # Send completion email
+        if applicant_email:
+            try:
+                start_date_raw = course_data.start_dates[0] if course_data and course_data.start_dates else "TBA"
+
+                from datetime import date as date_cls
+                def _fmt(d: str) -> str:
+                    try:
+                        parsed = date_cls.fromisoformat(d)
+                        return parsed.strftime("%B %d, %Y")
+                    except ValueError:
+                        return d
+
+                start_date_fmt = _fmt(start_date_raw)
+
+                html = get_enrollment_completed_email_html(
+                    name=applicant_name,
+                    course=course_name,
+                    start_date=start_date_fmt,
+                )
+                await send_email(
+                    to=applicant_email,
+                    subject=f"Enrollment Confirmed: {course_name} - Bright Horizons Institute",
+                    html_content=html,
+                    from_email=NOTIFICATION_FROM,
+                )
+            except Exception as email_err:
+                logger.warning("Failed to send completion email to %s: %s", applicant_email, email_err)
+
+        return {"message": f"Enrollment completed. {applicant_email} is now a student."}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to complete enrollment")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ── Document management endpoints ──────────────────────────────────────
 
 
@@ -350,11 +605,18 @@ def upload_document(
             "uploaded_by": admin_email,
         }
 
-        doc_ref.update({
+        # Official scans are auto-accepted; applicant uploads need review
+        review_status = "accepted" if source == "official" else "uploaded"
+        update_fields = {
             f"documents.{doc_type}.{slot_key}": doc_metadata,
-            f"documents.{doc_type}.review.status": "uploaded",
+            f"documents.{doc_type}.review.status": review_status,
             "updated_at": firestore.SERVER_TIMESTAMP,
-        })
+        }
+        if source == "official":
+            update_fields[f"documents.{doc_type}.review.reviewed_by"] = admin_email
+            update_fields[f"documents.{doc_type}.review.reviewed_at"] = now
+
+        doc_ref.update(update_fields)
 
         # Re-read and auto-advance enrollment status
         updated_data = doc_ref.get().to_dict()
@@ -428,7 +690,7 @@ def delete_document(
 
 
 @router.post("/enrollments/{enrollment_id}/documents/{doc_type}/review")
-def review_document(
+async def review_document(
     enrollment_id: str,
     doc_type: str,
     body: dict = Body(...),
@@ -493,7 +755,32 @@ def review_document(
 
         # Auto-advance enrollment status
         updated_data = doc_ref.get().to_dict()
-        _recompute_enrollment_status(doc_ref, updated_data)
+        new_enrollment_status = _recompute_enrollment_status(doc_ref, updated_data)
+
+        # Send email notifications
+        applicant_email = data.get("email", "")
+        applicant_name = data.get("firstName", "Applicant")
+        if applicant_email:
+            try:
+                if status == "rejected":
+                    doc_label = REQUIRED_DOCUMENTS[doc_type]["label"]
+                    html = get_document_rejected_email_html(applicant_name, doc_label, reject_reason.strip())
+                    await send_email(
+                        to=applicant_email,
+                        subject=f"Action Required: {doc_label} Needs Re-upload - Bright Horizons Institute",
+                        html_content=html,
+                        from_email=NOTIFICATION_FROM,
+                    )
+                elif new_enrollment_status == "in_waitlist":
+                    html = get_in_waitlist_email_html(applicant_name)
+                    await send_email(
+                        to=applicant_email,
+                        subject="Your Application Documents Have Been Accepted - Bright Horizons Institute",
+                        html_content=html,
+                        from_email=NOTIFICATION_FROM,
+                    )
+            except Exception as email_err:
+                logger.warning("Failed to send review notification email to %s: %s", applicant_email, email_err)
 
         return {"message": f"Document {status}", "review": review}
     except HTTPException:
@@ -680,4 +967,65 @@ def update_applicant_enrollment(
         raise
     except Exception as e:
         logger.exception("Failed to update applicant enrollment")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/applicant/my-classes")
+def get_my_classes(applicant: dict = Depends(verify_applicant_jwt)):
+    """Return the student's enrolled classes with batch and course info."""
+    from routers.course_router import COURSES
+
+    email = applicant.get("sub", "").lower()
+    try:
+        collection = get_collection_name("pending_enrollment_application")
+        docs = (
+            db.collection(collection)
+            .where("email", "==", email)
+            .where("status", "==", "completed")
+            .stream()
+        )
+
+        # Build a lookup from course title → Course object
+        course_map = {c.title: c for c in COURSES}
+
+        classes = []
+        for doc in docs:
+            data = doc.to_dict()
+            batch_id = data.get("batch_id")
+            course_title = data.get("course", "")
+            course_info = course_map.get(course_title)
+
+            # Fetch batch details if available
+            batch = None
+            if batch_id:
+                batch_collection = get_collection_name("course_batches")
+                batch_doc = db.collection(batch_collection).document(batch_id).get()
+                if batch_doc.exists:
+                    batch = batch_doc.to_dict()
+
+            created_at = data.get("created_at")
+            if created_at and hasattr(created_at, "isoformat"):
+                created_at = created_at.isoformat()
+
+            classes.append({
+                "enrollment_id": doc.id,
+                "course": course_title,
+                "course_slug": course_info.slug if course_info else None,
+                "batch_start_date": data.get("batch_start_date") or (batch.get("start_date") if batch else None),
+                "batch_status": batch.get("status") if batch else None,
+                "instructor": batch.get("instructor") if batch else None,
+                "schedule": [s.model_dump() for s in course_info.schedule] if course_info else [],
+                "duration_weeks": course_info.duration_weeks if course_info else None,
+                "total_hours": course_info.total_hours if course_info else None,
+                "enrolled_at": created_at,
+            })
+
+        # Sort by most recently enrolled first
+        classes.sort(key=lambda c: c.get("enrolled_at") or "", reverse=True)
+
+        return {"classes": classes}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to fetch student classes")
         raise HTTPException(status_code=500, detail=str(e))

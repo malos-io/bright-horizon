@@ -21,8 +21,13 @@
 
     <div class="section">
       <div class="section-header">
-        <h2>Enrollment Applications</h2>
-        <button class="btn-refresh" @click="loadEnrollments">Refresh</button>
+        <h2>{{ showAllEnrollments ? 'All Enrollment Applications' : 'Active Enrollment Applications' }}</h2>
+        <div class="section-header-actions">
+          <button class="btn-refresh" @click="showAllEnrollments = !showAllEnrollments">
+            {{ showAllEnrollments ? 'Active Only' : 'See All' }}
+          </button>
+          <button class="btn-refresh" @click="loadEnrollments">Refresh</button>
+        </div>
       </div>
       <div class="table-container">
         <table class="data-table">
@@ -39,15 +44,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="enrollment in enrollments" :key="enrollment.id">
+            <tr v-for="enrollment in displayedEnrollments" :key="enrollment.id">
               <td>
-                <button
-                  class="btn-view"
-                  @click="router.push('/application/' + enrollment.id)"
-                  title="View Application"
-                >
-                  &#128065;
-                </button>
+                <button class="btn-detail" @click="router.push('/application/' + enrollment.id)">View</button>
               </td>
               <td>{{ enrollment.lastName }}, {{ enrollment.firstName }} {{ enrollment.middleName }}</td>
               <td>{{ enrollment.email }}</td>
@@ -59,18 +58,27 @@
                 </span>
               </td>
               <td>{{ formatDate(enrollment.created_at) }}</td>
-              <td class="actions-cell">
+              <td>
                 <button
-                  class="btn-pdf"
-                  @click="downloadPdf(enrollment.id)"
-                  :disabled="pdfLoading === enrollment.id"
+                  v-if="enrollment.status === 'in_waitlist'"
+                  class="btn-action"
+                  @click="handleSendInterview(enrollment)"
+                  :disabled="sendingInterview === enrollment.id"
                 >
-                  {{ pdfLoading === enrollment.id ? 'Exporting...' : 'Export Application to PDF' }}
+                  {{ sendingInterview === enrollment.id ? 'Sending...' : 'Send Interview Schedule' }}
+                </button>
+                <button
+                  v-if="enrollment.status === 'physical_docs_required'"
+                  class="btn-action btn-action-green"
+                  @click="handleCompleteEnrollment(enrollment)"
+                  :disabled="completingEnrollment === enrollment.id"
+                >
+                  {{ completingEnrollment === enrollment.id ? 'Completing...' : 'Complete' }}
                 </button>
               </td>
             </tr>
-            <tr v-if="enrollments.length === 0">
-              <td colspan="8" class="empty-state">No enrollment applications yet</td>
+            <tr v-if="displayedEnrollments.length === 0">
+              <td colspan="8" class="empty-state">{{ showAllEnrollments ? 'No enrollment applications yet' : 'No active enrollment applications' }}</td>
             </tr>
           </tbody>
         </table>
@@ -85,19 +93,21 @@
             <tr>
               <th>Title</th>
               <th>Category</th>
-              <th>Price</th>
-              <th>Duration</th>
+              <th>Next Start Date</th>
+              <th>Instructor</th>
+              <th>Class Size</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="course in courses" :key="course.id || course.slug">
               <td>{{ course.title }}</td>
               <td>{{ course.category }}</td>
-              <td>{{ course.price || '--' }}</td>
-              <td>{{ course.duration || '--' }}</td>
+              <td>{{ formatStartDate(course.start_dates) }}</td>
+              <td>{{ course.instructor?.name || 'TBA' }}</td>
+              <td>{{ course.class_size || '--' }} students</td>
             </tr>
             <tr v-if="courses.length === 0">
-              <td colspan="4" class="empty-state">No courses found</td>
+              <td colspan="5" class="empty-state">No courses found</td>
             </tr>
           </tbody>
         </table>
@@ -109,18 +119,34 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCourses, getCategories, getEnrollments, exportEnrollmentPdf } from '../services/api'
+import { getCourses, getCategories, getEnrollments, sendInterviewSchedule, completeEnrollment } from '../services/api'
 
 const router = useRouter()
 const courses = ref([])
 const categories = ref([])
 const enrollments = ref([])
-const pdfLoading = ref(null)
+const sendingInterview = ref(null)
+const completingEnrollment = ref(null)
+const showAllEnrollments = ref(false)
+
+function formatStartDate(startDates) {
+  const val = (startDates && startDates.length) ? startDates[0] : ''
+  if (!val || val === 'TBA') return 'TBA'
+  const d = new Date(val + 'T00:00:00')
+  if (isNaN(d)) return val
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+}
 
 const pendingCount = computed(() =>
   enrollments.value.filter(e =>
     e.status === 'pending' || e.status === 'pending_upload' || e.status === 'pending_review'
   ).length
+)
+
+const displayedEnrollments = computed(() =>
+  showAllEnrollments.value
+    ? enrollments.value
+    : enrollments.value.filter(e => e.status !== 'completed')
 )
 
 function formatStatus(status) {
@@ -129,8 +155,8 @@ function formatStatus(status) {
     pending_upload: 'Pending Upload of Required Documents',
     pending_review: 'Pending Review',
     documents_rejected: 'Docs Rejected',
-    documents_accepted: 'Docs Accepted',
-    physical_docs_required: 'Physical Docs Required',
+    in_waitlist: 'In Waitlist',
+    physical_docs_required: 'Physical Documents and Interview Required',
     completed: 'Completed',
   }
   return map[status] || status
@@ -148,23 +174,55 @@ function formatDate(dateStr) {
   })
 }
 
-async function downloadPdf(id) {
-  pdfLoading.value = id
-  try {
-    await exportEnrollmentPdf(id)
-  } catch (e) {
-    console.error('Failed to export PDF:', e)
-    alert('Failed to export PDF. Please try again.')
-  } finally {
-    pdfLoading.value = null
-  }
-}
-
 async function loadEnrollments() {
   try {
     enrollments.value = await getEnrollments()
   } catch (e) {
     console.error('Failed to load enrollments:', e)
+  }
+}
+
+async function handleSendInterview(enrollment) {
+  const course = courses.value.find(c => c.title === enrollment.course)
+  const hasStartDate = course?.start_dates?.[0] && course.start_dates[0] !== 'TBA'
+
+  if (!hasStartDate) {
+    alert('This course has no start date set. Please set up an active batch in the Courses page first.')
+    return
+  }
+
+  if (!confirm(`Send interview schedule email to ${enrollment.firstName} ${enrollment.lastName} (${enrollment.email})?`)) {
+    return
+  }
+
+  sendingInterview.value = enrollment.id
+  try {
+    await sendInterviewSchedule(enrollment.id)
+    alert('Interview schedule email sent successfully.')
+    await loadEnrollments()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to send interview schedule.'
+    alert(msg)
+  } finally {
+    sendingInterview.value = null
+  }
+}
+
+async function handleCompleteEnrollment(enrollment) {
+  if (!confirm(`Complete enrollment for ${enrollment.firstName} ${enrollment.lastName} (${enrollment.email})?\n\nThis will finalize their enrollment and activate their student account.`)) {
+    return
+  }
+
+  completingEnrollment.value = enrollment.id
+  try {
+    await completeEnrollment(enrollment.id)
+    alert('Enrollment completed successfully. Student account has been activated.')
+    await loadEnrollments()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to complete enrollment.'
+    alert(msg)
+  } finally {
+    completingEnrollment.value = null
   }
 }
 
@@ -232,6 +290,11 @@ onMounted(async () => {
 .section-header h2 {
   font-size: 1.1rem;
   color: #1a1a2e;
+}
+
+.section-header-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 .section h2 {
@@ -315,33 +378,11 @@ onMounted(async () => {
 
 .status-pending_upload { background: #fff3cd; color: #856404; }
 .status-pending_review { background: #e3f2fd; color: #1565c0; }
-.status-documents_accepted { background: #d4edda; color: #155724; }
+.status-in_waitlist { background: #d4edda; color: #155724; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
 
-.actions-cell {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn-view {
-  padding: 0.3rem 0.5rem;
-  font-size: 1rem;
-  background: none;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  line-height: 1;
-}
-
-.btn-view:hover {
-  background: #f0f5ff;
-  border-color: #1a5fa4;
-}
-
-.btn-pdf {
+.btn-detail {
   padding: 0.3rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
@@ -354,13 +395,38 @@ onMounted(async () => {
   white-space: nowrap;
 }
 
-.btn-pdf:hover:not(:disabled) {
+.btn-detail:hover {
   background: #d0e2fc;
 }
 
-.btn-pdf:disabled {
+.btn-action {
+  padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  background: #1a5fa4;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-action:hover:not(:disabled) {
+  background: #15508a;
+}
+
+.btn-action:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-action-green {
+  background: #166534;
+}
+
+.btn-action-green:hover:not(:disabled) {
+  background: #14532d;
 }
 
 .empty-state {

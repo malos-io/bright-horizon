@@ -465,8 +465,8 @@ const enrollmentStatuses = [
   { value: 'pending_upload', label: 'Pending Upload of Required Documents' },
   { value: 'pending_review', label: 'Pending Document Review' },
   { value: 'documents_rejected', label: 'Documents Rejected' },
-  { value: 'documents_accepted', label: 'Documents Accepted' },
-  { value: 'physical_docs_required', label: 'Physical Documents Required' },
+  { value: 'in_waitlist', label: 'In Waitlist' },
+  { value: 'physical_docs_required', label: 'Physical Documents and Interview Required' },
   { value: 'completed', label: 'Completed' },
 ]
 
@@ -829,7 +829,7 @@ onMounted(async () => {
 }
 
 .status-pending, .status-pending_upload { background: #fff3cd; color: #856404; }
-.status-approved, .status-documents_accepted { background: #d4edda; color: #155724; }
+.status-approved, .status-in_waitlist { background: #d4edda; color: #155724; }
 .status-rejected, .status-documents_rejected { background: #f8d7da; color: #721c24; }
 .status-pending_review { background: #e3f2fd; color: #1565c0; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }

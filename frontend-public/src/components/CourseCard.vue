@@ -25,6 +25,10 @@
           <span class="meta-icon">&#127942;</span>
           <span>{{ course.certification }}</span>
         </div>
+        <div class="meta-item">
+          <span class="meta-icon">&#128197;</span>
+          <span>Starts: {{ formatStartDate(course.start_dates) }}</span>
+        </div>
       </div>
 
       <div class="course-stats">
@@ -62,6 +66,14 @@ const props = defineProps({
 
 const formatNumber = (num) => {
   return num.toLocaleString()
+}
+
+const formatStartDate = (startDates) => {
+  const val = (startDates && startDates.length) ? startDates[0] : ''
+  if (!val || val === 'TBA') return 'TBA'
+  const d = new Date(val + 'T00:00:00')
+  if (isNaN(d)) return val
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
 const getDiscount = () => {

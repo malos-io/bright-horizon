@@ -58,8 +58,8 @@
               <li><span class="icon">&#128218;</span> {{ course.total_hours }} total hours</li>
               <li><span class="icon">&#127942;</span> {{ course.certification }}</li>
               <li><span class="icon">&#128101;</span> Class size: {{ course.class_size }} students</li>
+              <li><span class="icon">&#128197;</span> Starts: {{ formatStartDate(course.start_dates?.[0]) }}</li>
               <li><span class="icon">&#128196;</span> Certificate of completion</li>
-              <li><span class="icon">&#128188;</span> Job placement assistance</li>
             </ul>
           </div>
         </div>
@@ -146,7 +146,7 @@
               <h4>Upcoming Start Dates</h4>
               <div v-for="(date, index) in course.start_dates" :key="index" class="date-item">
                 <span class="calendar-icon">&#128197;</span>
-                <span>{{ date }}</span>
+                <span>{{ formatStartDate(date) }}</span>
               </div>
             </div>
           </div>
@@ -177,6 +177,11 @@
     </div>
   </div>
 
+  <div v-else-if="notFound" class="loading-page">
+    <p>Course not found.</p>
+    <router-link to="/courses" class="back-link">Browse all courses</router-link>
+  </div>
+
   <div v-else class="loading-page">
     <p>Loading course details...</p>
   </div>
@@ -189,12 +194,18 @@ import { getCourse } from '../services/api'
 
 const route = useRoute()
 const course = ref(null)
+const notFound = ref(false)
 
 const fetchCourse = async (slug) => {
   try {
+    notFound.value = false
     course.value = await getCourse(slug)
   } catch (error) {
-    console.error('Error fetching course:', error)
+    if (error.response?.status === 404) {
+      notFound.value = true
+    } else {
+      console.error('Error fetching course:', error)
+    }
   }
 }
 
@@ -207,6 +218,13 @@ watch(() => route.params.slug, (newSlug) => {
     fetchCourse(newSlug)
   }
 })
+
+const formatStartDate = (val) => {
+  if (!val || val === 'TBA') return 'TBA'
+  const d = new Date(val + 'T00:00:00')
+  if (isNaN(d)) return val
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+}
 
 const formatNumber = (num) => {
   return num.toLocaleString()
@@ -801,10 +819,22 @@ const formatDescription = (desc) => {
 /* Loading */
 .loading-page {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 50vh;
   color: #666;
+  gap: 12px;
+}
+
+.back-link {
+  color: #1a5fa4;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.back-link:hover {
+  text-decoration: underline;
 }
 
 /* Responsive */

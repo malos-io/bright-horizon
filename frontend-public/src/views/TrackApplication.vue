@@ -90,6 +90,8 @@
               <h3>{{ app.firstName }} {{ app.middleName ? app.middleName + ' ' : '' }}{{ app.lastName }}</h3>
               <span class="status-badge" :class="'status-' + app.status">{{ formatStatus(app.status) }}</span>
             </div>
+            <p v-if="app.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been accepted. Please wait for further instructions from our admissions team.</p>
+            <p v-else-if="app.status === 'documents_rejected'" class="status-note status-note-warning">One or more documents require attention. Please click "See Application" below to review and re-upload.</p>
             <div class="app-details">
               <div class="detail-row">
                 <span class="detail-label">Reference ID</span>
@@ -125,6 +127,9 @@
               <h2>{{ selectedEnrollment.lastName }}, {{ selectedEnrollment.firstName }} {{ selectedEnrollment.middleName }}</h2>
               <span class="status-badge" :class="'status-' + selectedEnrollment.status">{{ formatStatus(selectedEnrollment.status) }}</span>
             </div>
+
+            <div v-if="selectedEnrollment.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been reviewed and accepted. Your application is now on the waitlist. Please wait for further instructions from our admissions team.</div>
+            <div v-else-if="selectedEnrollment.status === 'documents_rejected'" class="status-note status-note-warning">One or more documents need attention. Please check the Documents section below to review the feedback and re-upload as needed.</div>
 
             <!-- Application Form -->
             <div class="detail-section">
@@ -425,8 +430,8 @@ const formatStatus = (status) => {
     pending_upload: 'Pending Upload of Required Documents',
     pending_review: 'Under Review',
     documents_rejected: 'Documents Need Attention',
-    documents_accepted: 'Documents Accepted',
-    physical_docs_required: 'Physical Documents Required',
+    in_waitlist: 'In Waitlist',
+    physical_docs_required: 'Physical Documents and Interview Required',
     completed: 'Completed',
     under_review: 'Under Review',
     approved: 'Approved',
@@ -862,9 +867,30 @@ const handleApplicantUpload = async (event, docType) => {
   color: #e65100;
 }
 
-.status-documents_accepted {
+.status-in_waitlist {
   background: #e8f5e9;
   color: #2e7d32;
+}
+
+.status-note {
+  font-size: 13px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin: 10px 0 0;
+  text-align: left;
+}
+
+.status-note-success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.status-note-warning {
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
 
 .status-physical_docs_required {

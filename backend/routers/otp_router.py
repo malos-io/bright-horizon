@@ -121,6 +121,11 @@ async def verify_otp(request: OtpVerifyRequest):
     # Code is valid — delete OTP and fetch enrollment
     db.collection(otp_collection).document(email).delete()
 
+    # Look up the user's role from student_users (if exists)
+    student_collection = get_collection_name("student_users")
+    student_doc = db.collection(student_collection).document(email).get()
+    role = student_doc.to_dict().get("role", "applicant") if student_doc.exists else "applicant"
+
     enrollment_collection = get_collection_name("pending_enrollment_application")
     docs = db.collection(enrollment_collection).where("email", "==", email).stream()
 
@@ -146,4 +151,4 @@ async def verify_otp(request: OtpVerifyRequest):
     name = applications[0]["firstName"] if applications else ""
     token = create_applicant_jwt(email, name, enrollment_ids)
 
-    return {"applications": applications, "token": token}
+    return {"applications": applications, "token": token, "role": role}

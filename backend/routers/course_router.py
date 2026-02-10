@@ -1,5 +1,13 @@
-from fastapi import APIRouter
+import logging
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, Body, Depends, HTTPException
+from firebase_admin import firestore
 from schemas.course_schema import Course, CourseModule, CourseSchedule, Instructor
+from reusable_components.firebase import db, get_collection_name
+from reusable_components.auth import verify_jwt
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["courses"])
 
@@ -183,18 +191,84 @@ This TESDA-accredited qualification prepares you for careers in the tourism and 
     ),
 ]
 
+# Build a lookup by slug for quick access
+_COURSES_BY_SLUG = {c.slug: c for c in COURSES}
+
+
+# ── Batch-based course overrides ──────────────────────────────────────
+
+
+def _get_course_overrides() -> dict:
+    """Read active/enrollment_closed batches as course overrides.
+
+    This replaces the old course_overrides collection. The active batch
+    for each course IS the source of truth for start_dates, instructor,
+    and enrollment_deadline on the public page and Dashboard.
+    """
+    try:
+        collection = get_collection_name("course_batches")
+        docs = (
+            db.collection(collection)
+            .where("status", "in", ["active", "enrollment_closed"])
+            .stream()
+        )
+        result = {}
+        for doc in docs:
+            data = doc.to_dict()
+            slug = data.get("course_slug")
+            if not slug:
+                continue
+            override = {}
+            if data.get("start_date"):
+                override["start_dates"] = [data["start_date"]]
+            if "enrollment_deadline" in data:
+                override["enrollment_deadline"] = data["enrollment_deadline"]
+            if data.get("instructor"):
+                override["instructor"] = data["instructor"]
+            result[slug] = override
+        return result
+    except Exception as e:
+        logger.warning("Failed to fetch course overrides from batches: %s", e)
+        return {}
+
+
+def _apply_overrides(course: Course, overrides: dict) -> Course:
+    """Return a new Course with Firestore overrides merged in."""
+    override = overrides.get(course.slug)
+    if not override:
+        return course
+    data = course.model_dump()
+    if "start_dates" in override:
+        data["start_dates"] = override["start_dates"]
+    if "enrollment_deadline" in override:
+        data["enrollment_deadline"] = override["enrollment_deadline"]
+    if "instructor" in override:
+        base_instructor = data["instructor"]
+        base_instructor.update(override["instructor"])
+        data["instructor"] = base_instructor
+    return Course(**data)
+
+
+def _get_active_batch(slug: str):
+    """Return the active or enrollment_closed batch doc for a course, or None."""
+    collection = get_collection_name("course_batches")
+    docs = list(
+        db.collection(collection)
+        .where("course_slug", "==", slug)
+        .where("status", "in", ["active", "enrollment_closed"])
+        .limit(1)
+        .stream()
+    )
+    return docs[0] if docs else None
+
+
+# ── Public endpoints ──────────────────────────────────────────────────
+
 
 @router.get("/courses", response_model=list[Course])
 def get_courses():
-    return COURSES
-
-
-@router.get("/courses/{slug}", response_model=Course)
-def get_course(slug: str):
-    for course in COURSES:
-        if course.slug == slug:
-            return course
-    return {"error": "Course not found"}
+    overrides = _get_course_overrides()
+    return [_apply_overrides(c, overrides) for c in COURSES]
 
 
 @router.get("/categories")
@@ -205,4 +279,380 @@ def get_categories():
 
 @router.get("/courses/category/{category}", response_model=list[Course])
 def get_courses_by_category(category: str):
-    return [course for course in COURSES if course.category.lower() == category.lower()]
+    overrides = _get_course_overrides()
+    return [_apply_overrides(c, overrides) for c in COURSES if c.category.lower() == category.lower()]
+
+
+@router.get("/courses/{slug}", response_model=Course)
+def get_course(slug: str):
+    course = _COURSES_BY_SLUG.get(slug)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    overrides = _get_course_overrides()
+    return _apply_overrides(course, overrides)
+
+
+# ── Admin: courses summary ────────────────────────────────────────────
+
+
+@router.get("/courses-summary")
+def get_courses_summary(_admin: dict = Depends(verify_jwt)):
+    """Get all courses with batch summary stats for the admin courses list."""
+    overrides = _get_course_overrides()
+    merged_courses = [_apply_overrides(c, overrides) for c in COURSES]
+
+    # Get all batches to compute counts per course
+    batch_collection = get_collection_name("course_batches")
+    all_batches = list(db.collection(batch_collection).stream())
+
+    # Build per-slug stats from batches
+    batch_stats = {}
+    for bdoc in all_batches:
+        bdata = bdoc.to_dict()
+        bslug = bdata.get("course_slug")
+        if not bslug:
+            continue
+        if bslug not in batch_stats:
+            batch_stats[bslug] = {"total": 0, "completed": 0, "active_status": None}
+        batch_stats[bslug]["total"] += 1
+        if bdata.get("status") == "completed":
+            batch_stats[bslug]["completed"] += 1
+        if bdata.get("status") in ("active", "enrollment_closed"):
+            batch_stats[bslug]["active_status"] = bdata["status"]
+
+    # Count completed students per course from enrollments
+    enrollment_collection = get_collection_name("pending_enrollment_application")
+
+    results = []
+    for course in merged_courses:
+        docs = (
+            db.collection(enrollment_collection)
+            .where("course", "==", course.title)
+            .where("status", "==", "completed")
+            .stream()
+        )
+        total_students = sum(1 for _ in docs)
+
+        current_start = course.start_dates[0] if course.start_dates else "TBA"
+        stats = batch_stats.get(course.slug, {})
+
+        results.append({
+            "slug": course.slug,
+            "title": course.title,
+            "category": course.category,
+            "current_start_date": current_start,
+            "batch_count": stats.get("total", 0),
+            "total_completed_students": total_students,
+            "active_batch_status": stats.get("active_status"),
+            "instructor": course.instructor.model_dump(),
+            "class_size": course.class_size,
+            "duration_weeks": course.duration_weeks,
+            "total_hours": course.total_hours,
+        })
+
+    return results
+
+
+# ── Admin: batch lifecycle ────────────────────────────────────────────
+
+
+@router.post("/courses/{slug}/batches")
+def create_batch(slug: str, body: dict = Body(...), admin: dict = Depends(verify_jwt)):
+    """Start a new class batch for a course."""
+    if slug not in _COURSES_BY_SLUG:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Ensure no active batch already exists
+    existing = _get_active_batch(slug)
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="An active batch already exists for this course. Close it before starting a new one.",
+        )
+
+    start_date = body.get("start_date")
+    if not start_date:
+        raise HTTPException(status_code=400, detail="start_date is required")
+
+    instructor = body.get("instructor", {})
+    default_inst = INSTRUCTORS["default"]
+
+    batch_data = {
+        "course_slug": slug,
+        "status": "active",
+        "start_date": start_date,
+        "enrollment_deadline": body.get("enrollment_deadline"),
+        "instructor": {
+            "name": instructor.get("name") or default_inst.name,
+            "title": instructor.get("title") or default_inst.title,
+            "bio": instructor.get("bio") or default_inst.bio,
+            "image": instructor.get("image") or default_inst.image,
+        },
+        "created_at": firestore.SERVER_TIMESTAMP,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+        "closed_enrollment_at": None,
+        "completed_at": None,
+        "created_by": admin.get("sub", "unknown"),
+    }
+
+    collection = get_collection_name("course_batches")
+    _, doc_ref = db.collection(collection).add(batch_data)
+
+    return {"message": "Batch created", "batch_id": doc_ref.id}
+
+
+@router.patch("/courses/{slug}/batches/{batch_id}")
+def edit_batch(slug: str, batch_id: str, body: dict = Body(...), _admin: dict = Depends(verify_jwt)):
+    """Edit an active or enrollment_closed batch."""
+    if slug not in _COURSES_BY_SLUG:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    collection = get_collection_name("course_batches")
+    doc_ref = db.collection(collection).document(batch_id)
+    doc = doc_ref.get()
+
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    data = doc.to_dict()
+    if data.get("course_slug") != slug:
+        raise HTTPException(status_code=400, detail="Batch does not belong to this course")
+    if data.get("status") not in ("active", "enrollment_closed"):
+        raise HTTPException(status_code=400, detail="Only active or enrollment_closed batches can be edited")
+
+    updates = {}
+    if "start_date" in body:
+        updates["start_date"] = body["start_date"]
+    if "enrollment_deadline" in body:
+        updates["enrollment_deadline"] = body["enrollment_deadline"]
+    if "instructor" in body:
+        if not isinstance(body["instructor"], dict):
+            raise HTTPException(status_code=400, detail="instructor must be an object")
+        current_instructor = data.get("instructor", {})
+        current_instructor.update(body["instructor"])
+        updates["instructor"] = current_instructor
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    updates["updated_at"] = firestore.SERVER_TIMESTAMP
+    doc_ref.update(updates)
+
+    return {"message": "Batch updated"}
+
+
+@router.post("/courses/{slug}/batches/{batch_id}/close-enrollment")
+def close_batch_enrollment(slug: str, batch_id: str, admin: dict = Depends(verify_jwt)):
+    """Close enrollment for an active batch. Moves physical_docs_required enrollments back to in_waitlist."""
+    if slug not in _COURSES_BY_SLUG:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    collection = get_collection_name("course_batches")
+    doc_ref = db.collection(collection).document(batch_id)
+    doc = doc_ref.get()
+
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    data = doc.to_dict()
+    if data.get("course_slug") != slug:
+        raise HTTPException(status_code=400, detail="Batch does not belong to this course")
+    if data.get("status") != "active":
+        raise HTTPException(status_code=400, detail="Only active batches can have enrollment closed")
+
+    # Update batch status
+    doc_ref.update({
+        "status": "enrollment_closed",
+        "closed_enrollment_at": firestore.SERVER_TIMESTAMP,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    })
+
+    # Move physical_docs_required enrollments back to in_waitlist
+    course_title = _COURSES_BY_SLUG[slug].title
+    enrollment_collection = get_collection_name("pending_enrollment_application")
+    affected_docs = (
+        db.collection(enrollment_collection)
+        .where("course", "==", course_title)
+        .where("status", "==", "physical_docs_required")
+        .stream()
+    )
+
+    admin_email = admin.get("sub", "unknown")
+    now = datetime.now(timezone.utc).isoformat()
+    reverted_count = 0
+
+    for edoc in affected_docs:
+        edata = edoc.to_dict()
+        existing_changelog = edata.get("changelog", [])
+        edoc.reference.update({
+            "status": "in_waitlist",
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": existing_changelog + [{
+                "field": "status",
+                "oldValue": "physical_docs_required",
+                "newValue": "in_waitlist",
+                "updatedBy": admin_email,
+                "updatedAt": now,
+                "note": "Enrollment closed for batch — reverted to waitlist",
+            }],
+        })
+        reverted_count += 1
+
+    return {
+        "message": "Enrollment closed",
+        "reverted_to_waitlist": reverted_count,
+    }
+
+
+@router.post("/courses/{slug}/batches/{batch_id}/close")
+def close_batch(slug: str, batch_id: str, _admin: dict = Depends(verify_jwt)):
+    """Close/complete a batch. Course reverts to TBA (no active batch)."""
+    if slug not in _COURSES_BY_SLUG:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    collection = get_collection_name("course_batches")
+    doc_ref = db.collection(collection).document(batch_id)
+    doc = doc_ref.get()
+
+    if not doc.exists:
+        raise HTTPException(status_code=404, detail="Batch not found")
+
+    data = doc.to_dict()
+    if data.get("course_slug") != slug:
+        raise HTTPException(status_code=400, detail="Batch does not belong to this course")
+    if data.get("status") not in ("active", "enrollment_closed"):
+        raise HTTPException(status_code=400, detail="Only active or enrollment_closed batches can be closed")
+
+    doc_ref.update({
+        "status": "completed",
+        "completed_at": firestore.SERVER_TIMESTAMP,
+        "updated_at": firestore.SERVER_TIMESTAMP,
+    })
+
+    return {"message": "Batch closed. Course reverts to TBA."}
+
+
+# ── Admin: batch history ──────────────────────────────────────────────
+
+
+@router.get("/courses/{slug}/batches")
+def get_course_batches(slug: str, _admin: dict = Depends(verify_jwt)):
+    """Get batch history for a course from course_batches collection."""
+    course = _COURSES_BY_SLUG.get(slug)
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    overrides = _get_course_overrides()
+    merged_course = _apply_overrides(course, overrides)
+
+    # Get all batches for this course
+    batch_collection = get_collection_name("course_batches")
+    batch_docs = list(
+        db.collection(batch_collection)
+        .where("course_slug", "==", slug)
+        .stream()
+    )
+
+    # Get completed enrollments for this course
+    enrollment_collection = get_collection_name("pending_enrollment_application")
+    enrollment_docs = list(
+        db.collection(enrollment_collection)
+        .where("course", "==", merged_course.title)
+        .where("status", "==", "completed")
+        .stream()
+    )
+
+    # Group enrollments by batch_id
+    enrollments_by_batch = {}
+    legacy_enrollments = []
+    for edoc in enrollment_docs:
+        edata = edoc.to_dict()
+        created_at = edata.get("created_at")
+        if created_at and hasattr(created_at, "isoformat"):
+            created_at = created_at.isoformat()
+
+        student_entry = {
+            "enrollment_id": edoc.id,
+            "firstName": edata.get("firstName", ""),
+            "lastName": edata.get("lastName", ""),
+            "email": edata.get("email", ""),
+            "created_at": created_at,
+        }
+
+        bid = edata.get("batch_id")
+        if bid:
+            enrollments_by_batch.setdefault(bid, []).append(student_entry)
+        else:
+            legacy_enrollments.append(student_entry)
+
+    # Build batch list sorted by created_at
+    active_batch = None
+    completed_batches = []
+    for bdoc in batch_docs:
+        bdata = bdoc.to_dict()
+        created_at = bdata.get("created_at")
+        if created_at and hasattr(created_at, "isoformat"):
+            created_at = created_at.isoformat()
+        completed_at = bdata.get("completed_at")
+        if completed_at and hasattr(completed_at, "isoformat"):
+            completed_at = completed_at.isoformat()
+        closed_enrollment_at = bdata.get("closed_enrollment_at")
+        if closed_enrollment_at and hasattr(closed_enrollment_at, "isoformat"):
+            closed_enrollment_at = closed_enrollment_at.isoformat()
+
+        students = enrollments_by_batch.get(bdoc.id, [])
+        batch_entry = {
+            "batch_id": bdoc.id,
+            "status": bdata.get("status"),
+            "start_date": bdata.get("start_date"),
+            "enrollment_deadline": bdata.get("enrollment_deadline"),
+            "instructor": bdata.get("instructor"),
+            "student_count": len(students),
+            "students": students,
+            "created_at": created_at,
+            "completed_at": completed_at,
+            "closed_enrollment_at": closed_enrollment_at,
+        }
+
+        if bdata.get("status") in ("active", "enrollment_closed"):
+            active_batch = batch_entry
+        else:
+            completed_batches.append(batch_entry)
+
+    # Sort completed batches by created_at descending
+    completed_batches.sort(key=lambda b: b.get("created_at") or "", reverse=True)
+
+    # Number the completed batches (oldest = Batch 1)
+    completed_batches_numbered = []
+    for idx, batch in enumerate(reversed(completed_batches)):
+        batch["batch_number"] = idx + 1
+        batch["batch_label"] = f"Batch {idx + 1}"
+        completed_batches_numbered.append(batch)
+    completed_batches_numbered.reverse()
+
+    # Add legacy enrollments as a special batch if any exist
+    if legacy_enrollments:
+        completed_batches_numbered.append({
+            "batch_id": None,
+            "batch_number": 0,
+            "batch_label": "Legacy (Pre-tracking)",
+            "status": "completed",
+            "start_date": None,
+            "enrollment_deadline": None,
+            "instructor": None,
+            "student_count": len(legacy_enrollments),
+            "students": legacy_enrollments,
+            "created_at": None,
+            "completed_at": None,
+            "closed_enrollment_at": None,
+        })
+
+    total_students = sum(len(enrollments_by_batch.get(bdoc.id, [])) for bdoc in batch_docs) + len(legacy_enrollments)
+
+    return {
+        "course": merged_course.model_dump(),
+        "active_batch": active_batch,
+        "batches": completed_batches_numbered,
+        "total_students": total_students,
+        "total_batches": len(batch_docs),
+    }

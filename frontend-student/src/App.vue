@@ -1,23 +1,36 @@
 <template>
   <div id="app">
-    <div class="student-layout">
+    <!-- Public pages (login) render without sidebar -->
+    <router-view v-if="$route.meta.public" />
+
+    <!-- Authenticated layout with sidebar -->
+    <div v-else class="student-layout">
       <aside class="sidebar">
         <div class="sidebar-header">
           <img :src="logo" alt="Bright Horizons Institute" class="sidebar-logo" />
           <h2>Student Portal</h2>
         </div>
         <nav class="sidebar-nav">
-          <router-link to="/" class="nav-item">
+          <router-link to="/" class="nav-item" exact>
             <span class="nav-icon">&#9632;</span>
             Dashboard
           </router-link>
+          <router-link to="/my-classes" class="nav-item">
+            <span class="nav-icon">&#128218;</span>
+            My Classes
+          </router-link>
         </nav>
+        <div class="sidebar-footer">
+          <div class="user-name">{{ auth.state.name || 'Student' }}</div>
+          <div class="user-email">{{ auth.state.email }}</div>
+          <button class="logout-btn" @click="handleLogout">Logout</button>
+        </div>
       </aside>
       <main class="main-content">
         <header class="top-bar">
-          <h1 class="page-title">My Learning</h1>
+          <h1 class="page-title">{{ pageTitle }}</h1>
           <div class="user-info">
-            <span>Student</span>
+            <span>{{ auth.state.email }}</span>
           </div>
         </header>
         <div class="content-area">
@@ -29,7 +42,26 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuth } from './composables/useAuth'
 import logo from './assets/logo.png'
+
+const auth = useAuth()
+const router = useRouter()
+const route = useRoute()
+
+const pageTitles = {
+  Dashboard: 'Dashboard',
+  MyClasses: 'My Classes',
+  ApplicationDetail: 'Application Details',
+}
+const pageTitle = computed(() => pageTitles[route.name] || route.name)
+
+function handleLogout() {
+  auth.logout()
+  router.push('/login')
+}
 </script>
 
 <style>
@@ -59,8 +91,10 @@ body {
   width: 260px;
   background: linear-gradient(180deg, #0d3b6e 0%, #1a5fa4 100%);
   color: white;
-  padding: 2rem 0;
+  padding: 2rem 0 0;
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-header {
@@ -86,6 +120,7 @@ body {
 
 .sidebar-nav {
   padding: 1rem 0;
+  flex: 1;
 }
 
 .nav-item {
@@ -107,6 +142,42 @@ body {
 
 .nav-icon {
   font-size: 1.1rem;
+}
+
+.sidebar-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sidebar-footer .user-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+}
+
+.sidebar-footer .user-email {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.75rem;
+  word-break: break-all;
+}
+
+.sidebar-footer .logout-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sidebar-footer .logout-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .main-content {

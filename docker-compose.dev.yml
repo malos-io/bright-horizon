@@ -29,6 +29,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - VITE_API_PROXY_TARGET=http://backend:8000
     depends_on:
       - backend
     networks:
@@ -48,6 +49,7 @@ services:
     environment:
       - CHOKIDAR_USEPOLLING=true
       - WATCHPACK_POLLING=true
+      - VITE_API_PROXY_TARGET=http://backend:8000
     depends_on:
       - backend
     networks:
