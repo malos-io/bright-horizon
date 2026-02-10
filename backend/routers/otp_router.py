@@ -126,6 +126,11 @@ async def verify_otp(request: OtpVerifyRequest):
     student_doc = db.collection(student_collection).document(email).get()
     role = student_doc.to_dict().get("role", "applicant") if student_doc.exists else "applicant"
 
+    # Fetch course data for enrichment (start date, deadline, instructor)
+    from routers.course_router import get_courses
+    courses = get_courses()
+    course_map = {c.title: c for c in courses}
+
     enrollment_collection = get_collection_name("pending_enrollment_application")
     docs = db.collection(enrollment_collection).where("email", "==", email).stream()
 
@@ -135,15 +140,27 @@ async def verify_otp(request: OtpVerifyRequest):
         created_at = data.get("created_at")
         if created_at and hasattr(created_at, "isoformat"):
             created_at = created_at.isoformat()
+        course_name = data.get("course", "")
+        course_info = course_map.get(course_name)
+        start_date = None
+        enrollment_deadline = None
+        instructor_name = None
+        if course_info:
+            start_date = course_info.start_dates[0] if course_info.start_dates and course_info.start_dates[0] != "TBA" else None
+            enrollment_deadline = course_info.enrollment_deadline
+            instructor_name = course_info.instructor.name if course_info.instructor.name != "TBA" else None
         applications.append({
             "id": doc.id,
             "firstName": data.get("firstName", ""),
             "lastName": data.get("lastName", ""),
             "middleName": data.get("middleName", ""),
-            "course": data.get("course", ""),
+            "course": course_name,
             "status": data.get("status", "pending"),
             "created_at": created_at,
             "email": data.get("email", ""),
+            "start_date": start_date,
+            "enrollment_deadline": enrollment_deadline,
+            "instructor_name": instructor_name,
         })
 
     # Issue short-lived applicant JWT for authenticated access

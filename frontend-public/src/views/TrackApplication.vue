@@ -86,20 +86,68 @@
           <h2>Your Application{{ applications.length > 1 ? 's' : '' }}</h2>
 
           <div v-for="app in applications" :key="app.id" class="application-item">
-            <div class="app-header">
+            <!-- Card Header -->
+            <div class="app-card-top">
               <h3>{{ app.firstName }} {{ app.middleName ? app.middleName + ' ' : '' }}{{ app.lastName }}</h3>
-              <span class="status-badge" :class="'status-' + app.status">{{ formatStatus(app.status) }}</span>
+              <div class="app-card-meta">
+                <span class="app-course-name">{{ app.course }}</span>
+                <span class="status-badge" :class="'status-' + app.status">{{ formatStatus(app.status) }}</span>
+              </div>
             </div>
-            <p v-if="app.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been accepted. Please wait for further instructions from our admissions team.</p>
-            <p v-else-if="app.status === 'documents_rejected'" class="status-note status-note-warning">One or more documents require attention. Please click "See Application" below to review and re-upload.</p>
+
+            <!-- Status Action Banner -->
+            <div v-if="app.status === 'physical_docs_required'" class="action-banner action-banner-info">
+              <div class="action-banner-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <strong>Next Step: Physical Documents &amp; Interview</strong>
+              </div>
+              <p>Please visit <strong>Bright Horizons Institute</strong> in person to submit original copies of your documents and undergo a brief admissions interview.</p>
+              <div class="action-banner-checklist">
+                <span>Bring the following:</span>
+                <ul>
+                  <li>Birth Certificate (PSA/NSO)</li>
+                  <li>Educational Credentials (TOR / Diploma / Form 137)</li>
+                  <li>Valid Government-Issued ID</li>
+                  <li>1x1 &amp; 2x2 ID Photos (white background)</li>
+                </ul>
+              </div>
+            </div>
+            <div v-else-if="app.status === 'in_waitlist'" class="action-banner action-banner-success">
+              <div class="action-banner-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <strong>Documents Accepted</strong>
+              </div>
+              <p>All submitted documents have been reviewed and accepted. Please wait for further instructions from our admissions team.</p>
+            </div>
+            <div v-else-if="app.status === 'documents_rejected'" class="action-banner action-banner-warning">
+              <div class="action-banner-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <strong>Action Required</strong>
+              </div>
+              <p>One or more documents need attention. Please click "See Application" below to review feedback and re-upload.</p>
+            </div>
+
+            <!-- Course Info Highlights -->
+            <div v-if="app.start_date || app.enrollment_deadline || app.instructor_name" class="app-course-info">
+              <div v-if="app.instructor_name" class="course-info-item">
+                <span class="course-info-label">Instructor</span>
+                <span class="course-info-value">{{ app.instructor_name }}</span>
+              </div>
+              <div v-if="app.start_date" class="course-info-item">
+                <span class="course-info-label">Class Starts</span>
+                <span class="course-info-value course-info-highlight">{{ formatDateShort(app.start_date) }}</span>
+              </div>
+              <div v-if="app.enrollment_deadline" class="course-info-item">
+                <span class="course-info-label">Enrollment Deadline</span>
+                <span class="course-info-value course-info-deadline">{{ formatDateShort(app.enrollment_deadline) }}</span>
+              </div>
+            </div>
+
+            <!-- Details -->
             <div class="app-details">
               <div class="detail-row">
                 <span class="detail-label">Reference ID</span>
-                <span class="detail-value">{{ app.id }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Course</span>
-                <span class="detail-value">{{ app.course }}</span>
+                <span class="detail-value detail-value-mono">{{ app.id }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Date Applied</span>
@@ -128,7 +176,8 @@
               <span class="status-badge" :class="'status-' + selectedEnrollment.status">{{ formatStatus(selectedEnrollment.status) }}</span>
             </div>
 
-            <div v-if="selectedEnrollment.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been reviewed and accepted. Your application is now on the waitlist. Please wait for further instructions from our admissions team.</div>
+            <div v-if="selectedEnrollment.status === 'physical_docs_required'" class="status-note status-note-info">Please visit <strong>Bright Horizons Institute</strong> in person to submit the <strong>original copies</strong> of your documents for verification and undergo a brief interview with our admissions team. Please bring: Birth Certificate (PSA/NSO), Educational Credentials, Government-Issued ID, and ID Photos (1x1 &amp; 2x2, white background).</div>
+            <div v-else-if="selectedEnrollment.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been reviewed and accepted. Your application is now on the waitlist. Please wait for further instructions from our admissions team.</div>
             <div v-else-if="selectedEnrollment.status === 'documents_rejected'" class="status-note status-note-warning">One or more documents need attention. Please check the Documents section below to review the feedback and re-upload as needed.</div>
 
             <!-- Application Form -->
@@ -444,6 +493,14 @@ const formatStatus = (status) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return 'N/A'
   const date = new Date(dateStr)
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+const formatDateShort = (dateStr) => {
+  if (!dateStr) return 'N/A'
+  // Parse YYYY-MM-DD without timezone shift
+  const [y, m, d] = dateStr.split('-').map(Number)
+  const date = new Date(y, m - 1, d)
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
 }
 
@@ -798,25 +855,41 @@ const handleApplicantUpload = async (event, docType) => {
 }
 
 .application-item {
-  background: #f8f9fb;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 16px;
-  border: 1px solid #eee;
+  background: #ffffff;
+  border-radius: 14px;
+  margin-bottom: 20px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 
-.app-header {
+.app-card-top {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f0f5ff 100%);
+  border-bottom: 1px solid #e8f0fe;
 }
 
-.app-header h3 {
+.app-card-top h3 {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1a1a2e;
   margin: 0;
+}
+
+.app-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.app-course-name {
+  font-size: 14px;
+  color: #1a5fa4;
+  font-weight: 600;
 }
 
 .status-badge {
@@ -872,6 +945,101 @@ const handleApplicantUpload = async (event, docType) => {
   color: #2e7d32;
 }
 
+/* ── Action banners ── */
+
+.action-banner {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.action-banner-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.action-banner p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.action-banner-checklist {
+  margin-top: 10px;
+}
+
+.action-banner-checklist span {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.action-banner-checklist ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.action-banner-info {
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.action-banner-success {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.action-banner-warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+/* ── Course info highlights ── */
+
+.app-course-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  background: #e8f0fe;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.course-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 24px;
+  background: #fafbff;
+}
+
+.course-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.course-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.course-info-highlight {
+  color: #166534;
+}
+
+.course-info-deadline {
+  color: #dc2626;
+}
+
+/* Keep status-note for detail view */
 .status-note {
   font-size: 13px;
   line-height: 1.5;
@@ -893,6 +1061,12 @@ const handleApplicantUpload = async (event, docType) => {
   border: 1px solid #fde68a;
 }
 
+.status-note-info {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
 .status-physical_docs_required {
   background: #e3f2fd;
   color: #1565c0;
@@ -906,36 +1080,50 @@ const handleApplicantUpload = async (event, docType) => {
 .app-details {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
+  padding: 0 24px;
 }
 
 .detail-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.detail-row:last-child {
+  border-bottom: none;
 }
 
 .detail-label {
-  font-size: 14px;
-  color: #888;
+  font-size: 13px;
+  color: #94a3b8;
   font-weight: 500;
 }
 
 .detail-value {
-  font-size: 14px;
-  color: #1a1a2e;
+  font-size: 13px;
+  color: #334155;
   font-weight: 500;
   text-align: right;
   max-width: 60%;
   word-break: break-all;
 }
 
+.detail-value-mono {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12px;
+  color: #64748b;
+}
+
 /* ── See Application button ── */
 
 .btn-see-app {
-  margin-top: 12px;
+  margin: 16px 24px 20px;
   font-size: 14px;
-  padding: 10px 20px;
+  padding: 11px 20px;
+  width: calc(100% - 48px);
 }
 
 /* ── Detail View ── */
@@ -1322,10 +1510,29 @@ const handleApplicantUpload = async (event, docType) => {
     gap: 6px;
   }
 
-  .app-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+  .app-card-top {
+    padding: 16px 18px;
+  }
+
+  .app-course-info {
+    grid-template-columns: 1fr;
+  }
+
+  .course-info-item {
+    padding: 10px 18px;
+  }
+
+  .app-details {
+    padding: 0 18px;
+  }
+
+  .action-banner {
+    padding: 14px 18px;
+  }
+
+  .btn-see-app {
+    margin: 14px 18px 16px;
+    width: calc(100% - 36px);
   }
 
   .detail-row {

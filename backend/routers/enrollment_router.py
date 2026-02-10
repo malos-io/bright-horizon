@@ -49,6 +49,21 @@ ENROLLMENT_STATUSES = {
 _AUTO_STATUSES = {"pending", "pending_upload", "pending_review", "documents_rejected"}
 
 
+def _log_email_sent(doc_ref, email_type: str, subject: str, triggered_by: str = "system"):
+    """Append an entry to the enrollment's emails_sent array."""
+    try:
+        doc_ref.update({
+            "emails_sent": firestore.ArrayUnion([{
+                "type": email_type,
+                "subject": subject,
+                "sent_at": datetime.now(timezone.utc).isoformat(),
+                "triggered_by": triggered_by,
+            }]),
+        })
+    except Exception:
+        logger.warning("Failed to log email_sent for %s", doc_ref.id)
+
+
 def _recompute_enrollment_status(doc_ref, data: dict) -> str | None:
     """Auto-advance enrollment status based on document review states.
 
@@ -191,13 +206,15 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
 
         # Send confirmation email with process overview
         try:
+            subject = f"Application Received: {application.course} - Bright Horizons Institute"
             html = get_application_submitted_email_html(application.firstName, application.course)
             await send_email(
                 to=application.email,
-                subject=f"Application Received: {application.course} - Bright Horizons Institute",
+                subject=subject,
                 html_content=html,
                 from_email=NOTIFICATION_FROM,
             )
+            _log_email_sent(doc_ref[1], "application_submitted", subject)
         except Exception as email_err:
             logger.warning("Failed to send submission confirmation email to %s: %s", application.email, email_err)
 
@@ -361,12 +378,14 @@ async def send_interview_schedule(
             start_date=start_date_fmt,
             enrollment_deadline=deadline_fmt,
         )
+        subject = f"Interview & Enrollment Schedule: {course_name} - Bright Horizons Institute"
         await send_email(
             to=applicant_email,
-            subject=f"Interview & Enrollment Schedule: {course_name} - Bright Horizons Institute",
+            subject=subject,
             html_content=html,
             from_email=NOTIFICATION_FROM,
         )
+        _log_email_sent(doc_ref, "interview_schedule", subject, triggered_by=admin.get("sub", "system"))
 
         # Update status to physical_docs_required
         admin_email = admin.get("sub", "unknown")
@@ -509,12 +528,14 @@ async def complete_enrollment(
                     course=course_name,
                     start_date=start_date_fmt,
                 )
+                subject = f"Enrollment Confirmed: {course_name} - Bright Horizons Institute"
                 await send_email(
                     to=applicant_email,
-                    subject=f"Enrollment Confirmed: {course_name} - Bright Horizons Institute",
+                    subject=subject,
                     html_content=html,
                     from_email=NOTIFICATION_FROM,
                 )
+                _log_email_sent(doc_ref, "enrollment_completed", subject, triggered_by=admin_email)
             except Exception as email_err:
                 logger.warning("Failed to send completion email to %s: %s", applicant_email, email_err)
 
@@ -764,21 +785,25 @@ async def review_document(
             try:
                 if status == "rejected":
                     doc_label = REQUIRED_DOCUMENTS[doc_type]["label"]
+                    subject = f"Action Required: {doc_label} Needs Re-upload - Bright Horizons Institute"
                     html = get_document_rejected_email_html(applicant_name, doc_label, reject_reason.strip())
                     await send_email(
                         to=applicant_email,
-                        subject=f"Action Required: {doc_label} Needs Re-upload - Bright Horizons Institute",
+                        subject=subject,
                         html_content=html,
                         from_email=NOTIFICATION_FROM,
                     )
+                    _log_email_sent(doc_ref, "document_rejected", subject, triggered_by=admin_email)
                 elif new_enrollment_status == "in_waitlist":
+                    subject = "Your Application Documents Have Been Accepted - Bright Horizons Institute"
                     html = get_in_waitlist_email_html(applicant_name)
                     await send_email(
                         to=applicant_email,
-                        subject="Your Application Documents Have Been Accepted - Bright Horizons Institute",
+                        subject=subject,
                         html_content=html,
                         from_email=NOTIFICATION_FROM,
                     )
+                    _log_email_sent(doc_ref, "documents_accepted", subject, triggered_by=admin_email)
             except Exception as email_err:
                 logger.warning("Failed to send review notification email to %s: %s", applicant_email, email_err)
 

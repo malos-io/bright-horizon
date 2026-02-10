@@ -20,9 +20,36 @@
           <h2>{{ enrollment.lastName }}, {{ enrollment.firstName }} {{ enrollment.middleName }}</h2>
           <p class="summary-meta">{{ enrollment.course }} &middot; {{ formatDate(enrollment.created_at) }}</p>
         </div>
-        <select v-model="statusValue" @change="handleStatusChange" class="status-select" :class="'status-' + statusValue">
-          <option v-for="s in enrollmentStatuses" :key="s.value" :value="s.value">{{ s.label }}</option>
+        <select v-if="isEarlyStatus" v-model="statusValue" @change="handleStatusChange" class="status-select" :class="'status-' + statusValue">
+          <option v-for="s in earlyStatuses" :key="s.value" :value="s.value">{{ s.label }}</option>
         </select>
+        <span v-else class="status-badge-large" :class="'status-' + statusValue">{{ formatStatusLabel(statusValue) }}</span>
+      </div>
+
+      <!-- Workflow Actions -->
+      <div v-if="statusValue === 'in_waitlist'" class="workflow-banner workflow-interview">
+        <div class="workflow-text">
+          <strong>Ready for interview?</strong>
+          <span>Send the interview schedule email and advance to "Physical Documents &amp; Interview Required".</span>
+        </div>
+        <button class="btn-workflow" @click="handleSendInterview" :disabled="actionLoading">
+          {{ actionLoading ? 'Sending...' : 'Send Interview Schedule' }}
+        </button>
+      </div>
+      <div v-else-if="statusValue === 'physical_docs_required'" class="workflow-banner workflow-complete">
+        <div class="workflow-text">
+          <strong>Ready to complete enrollment?</strong>
+          <span>Send the confirmation email and promote this applicant to a student account.</span>
+        </div>
+        <button class="btn-workflow btn-workflow-green" @click="handleCompleteEnrollment" :disabled="actionLoading">
+          {{ actionLoading ? 'Processing...' : 'Complete Enrollment' }}
+        </button>
+      </div>
+      <div v-else-if="statusValue === 'completed'" class="workflow-banner workflow-done">
+        <div class="workflow-text">
+          <strong>Enrollment completed</strong>
+          <span>This applicant has been promoted to a student account.</span>
+        </div>
       </div>
 
       <!-- Application Form Section -->
@@ -401,6 +428,35 @@
         </div>
       </div>
 
+      <!-- Email History Section -->
+      <div class="section" v-if="emailsSent.length > 0">
+        <div class="section-header">
+          <h3 @click="emailsExpanded = !emailsExpanded" class="section-toggle">
+            {{ emailsExpanded ? '&#9660;' : '&#9654;' }} Email History ({{ emailsSent.length }})
+          </h3>
+        </div>
+        <div v-show="emailsExpanded" class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Subject</th>
+                <th>Triggered By</th>
+                <th>Sent At</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(entry, i) in emailsSent" :key="i">
+                <td><span class="email-type-badge" :class="'email-type-' + entry.type">{{ formatEmailType(entry.type) }}</span></td>
+                <td>{{ entry.subject }}</td>
+                <td>{{ entry.triggered_by || 'system' }}</td>
+                <td>{{ formatDate(entry.sent_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- Changelog Section -->
       <div class="section" v-if="changelog.length > 0">
         <div class="section-header">
@@ -438,7 +494,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -448,11 +504,13 @@ const loading = ref(true)
 const editing = ref(false)
 const saving = ref(false)
 const pdfLoading = ref(false)
+const actionLoading = ref(false)
 const saveMessage = ref('')
 const saveMessageType = ref('success')
 const formExpanded = ref(true)
 const docsExpanded = ref(true)
 const changelogExpanded = ref(true)
+const emailsExpanded = ref(true)
 const courses = ref([])
 const documentTypes = ref({})
 const documents = ref({})
@@ -469,6 +527,19 @@ const enrollmentStatuses = [
   { value: 'physical_docs_required', label: 'Physical Documents and Interview Required' },
   { value: 'completed', label: 'Completed' },
 ]
+
+// Statuses where the dropdown is editable (before workflow buttons take over)
+const earlyStatuses = enrollmentStatuses.filter(s =>
+  ['pending_upload', 'pending_review', 'documents_rejected'].includes(s.value)
+)
+
+const isEarlyStatus = computed(() =>
+  ['pending_upload', 'pending_review', 'documents_rejected', 'pending'].includes(statusValue.value)
+)
+
+function formatStatusLabel(value) {
+  return enrollmentStatuses.find(s => s.value === value)?.label || value
+}
 
 const editSnapshot = ref({})
 
@@ -545,6 +616,22 @@ const changelog = computed(() => {
   const log = enrollment.value?.changelog || []
   return [...log].reverse()
 })
+
+const emailsSent = computed(() => {
+  const emails = enrollment.value?.emails_sent || []
+  return [...emails].reverse()
+})
+
+function formatEmailType(type) {
+  const map = {
+    application_submitted: 'Application Submitted',
+    interview_schedule: 'Interview Schedule',
+    enrollment_completed: 'Enrollment Completed',
+    document_rejected: 'Document Rejected',
+    documents_accepted: 'Documents Accepted',
+  }
+  return map[type] || type
+}
 
 function startEdit() {
   const snapshot = {}
@@ -642,6 +729,36 @@ async function handleStatusChange() {
     console.error('Failed to update status:', e)
     alert('Failed to update status')
     statusValue.value = enrollment.value?.status || 'pending_upload'
+  }
+}
+
+async function handleSendInterview() {
+  if (!confirm(`Send interview schedule email to ${enrollment.value.firstName} ${enrollment.value.lastName} (${enrollment.value.email})?`)) return
+  actionLoading.value = true
+  try {
+    await sendInterviewSchedule(route.params.id)
+    alert('Interview schedule email sent successfully.')
+    await loadEnrollment()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to send interview schedule.'
+    alert(msg)
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function handleCompleteEnrollment() {
+  if (!confirm(`Complete enrollment for ${enrollment.value.firstName} ${enrollment.value.lastName}? This will send a confirmation email and promote them to a student account.`)) return
+  actionLoading.value = true
+  try {
+    await completeEnrollment(route.params.id)
+    alert('Enrollment completed successfully.')
+    await loadEnrollment()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to complete enrollment.'
+    alert(msg)
+  } finally {
+    actionLoading.value = false
   }
 }
 
@@ -1143,6 +1260,99 @@ onMounted(async () => {
 
 .old-value { color: #c0392b; }
 .new-value { color: #27ae60; }
+
+.status-badge-large {
+  display: inline-block;
+  padding: 0.4rem 1rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Workflow actions ── */
+
+.workflow-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.workflow-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.workflow-text strong {
+  font-size: 0.9rem;
+}
+
+.workflow-text span {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.workflow-interview {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.workflow-complete {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.btn-workflow {
+  padding: 0.5rem 1.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+  background: #1a5fa4;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-workflow:hover:not(:disabled) { background: #154d87; }
+.btn-workflow:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-workflow-green {
+  background: #16a34a;
+}
+
+.btn-workflow-green:hover:not(:disabled) { background: #15803d; }
+
+.workflow-done {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+/* ── Email history ── */
+
+.email-type-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.email-type-application_submitted { background: #e8f0fe; color: #1a5fa4; }
+.email-type-interview_schedule { background: #fff3cd; color: #856404; }
+.email-type-enrollment_completed { background: #c8e6c9; color: #1b5e20; }
+.email-type-document_rejected { background: #f8d7da; color: #721c24; }
+.email-type-documents_accepted { background: #d4edda; color: #155724; }
 
 /* ── Documents section ── */
 
