@@ -225,8 +225,9 @@ onMounted(async () => {
 
 .sponsor-image {
   width: 200px;
-  min-height: 250px;
+  height: 280px;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .sponsor-image img {
