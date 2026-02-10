@@ -77,7 +77,7 @@ import logo from '@/assets/logo.png'
 import tesdaLogo from '@/assets/tesda-logo.png'
 import secLogo from '@/assets/sec-logo.png'
 
-const adminUrl = import.meta.env.VITE_ADMIN_URL || '/admin/'
+const adminUrl = import.meta.env.VITE_ADMIN_URL || 'http://localhost:5174'
 </script>
 
 <style scoped>
