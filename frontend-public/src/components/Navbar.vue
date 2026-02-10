@@ -3,7 +3,7 @@
     <div class="top-bar">
       <div class="top-bar-inner">
         <div class="top-bar-left">
-          <span class="top-bar-item">0995 589 2022</span>
+          <span class="top-bar-item">0935-420-9383</span>
           <span class="top-bar-divider">|</span>
           <span class="top-bar-item">info@brighthii.com</span>
         </div>
@@ -27,7 +27,6 @@
           <router-link to="/" class="nav-link">Home</router-link>
           <router-link to="/courses" class="nav-link">Courses</router-link>
           <router-link to="/sponsors" class="nav-link">Sponsors</router-link>
-          <a href="#" class="nav-link">Contact</a>
         </div>
 
         <div class="nav-actions">
@@ -46,7 +45,6 @@
         <router-link to="/" class="nav-link" @click="mobileOpen = false">Home</router-link>
         <router-link to="/courses" class="nav-link" @click="mobileOpen = false">Courses</router-link>
         <router-link to="/sponsors" class="nav-link" @click="mobileOpen = false">Sponsors</router-link>
-        <a href="#" class="nav-link">Contact</a>
         <div class="mobile-actions">
           <a :href="studentUrl" class="btn btn-outline" @click="mobileOpen = false">Student Portal</a>
           <router-link to="/track" class="btn btn-outline" @click="mobileOpen = false">Track Application</router-link>

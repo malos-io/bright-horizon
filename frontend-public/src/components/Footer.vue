@@ -24,7 +24,6 @@
           <li><router-link to="/">Home</router-link></li>
           <li><router-link to="/courses">All Courses</router-link></li>
           <li><a href="#">About Us</a></li>
-          <li><a href="#">Contact</a></li>
         </ul>
       </div>
 
@@ -39,9 +38,9 @@
       <div class="footer-section">
         <h4>Contact Us</h4>
         <ul class="contact-list">
-          <li>123 Training Street, Manila</li>
-          <li>Philippines 1000</li>
-          <li>0995 589 2022</li>
+          <li>Siayan Proper (Pob.), Siayan</li>
+          <li>Zamboanga Del Norte</li>
+          <li>0935-420-9383</li>
           <li>info@brighthii.com</li>
         </ul>
       </div>
