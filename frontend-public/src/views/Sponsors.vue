@@ -8,24 +8,6 @@
       </div>
     </section>
 
-    <!-- Stats Section -->
-    <section v-if="sponsors.length > 0" class="stats-section">
-      <div class="stats-container">
-        <div class="stat-card">
-          <span class="stat-number">{{ totalScholars }}</span>
-          <span class="stat-label">Scholars Supported</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-number">{{ sponsors.length }}</span>
-          <span class="stat-label">Active Sponsors</span>
-        </div>
-        <div class="stat-card">
-          <span class="stat-number">100%</span>
-          <span class="stat-label">Graduation Rate</span>
-        </div>
-      </div>
-    </section>
-
     <!-- Sponsors Grid -->
     <section class="sponsors-section">
       <div class="section-header">
@@ -49,12 +31,6 @@
             <h3>{{ sponsor.name }}</h3>
             <p class="sponsor-title">{{ sponsor.title }}</p>
             <p class="sponsor-position" v-if="sponsor.position">{{ sponsor.position }}</p>
-            <div class="sponsor-stats">
-              <div class="scholar-count">
-                <span class="count-icon">&#127891;</span>
-                <span><strong>{{ sponsor.scholars_sponsored }}</strong> Scholars Sponsored</span>
-              </div>
-            </div>
             <p class="sponsor-message" v-if="sponsor.message">"{{ sponsor.message }}"</p>
           </div>
         </div>
@@ -82,14 +58,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getSponsors } from '../services/api'
 
 const sponsors = ref([])
-
-const totalScholars = computed(() => {
-  return sponsors.value.reduce((sum, s) => sum + s.scholars_sponsored, 0)
-})
 
 onMounted(async () => {
   try {
@@ -137,46 +109,6 @@ onMounted(async () => {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.7;
-}
-
-/* Stats Section */
-.stats-section {
-  padding: 0 20px;
-  margin-top: -40px;
-  position: relative;
-  z-index: 10;
-}
-
-.stats-container {
-  max-width: 900px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-
-.stat-card {
-  background: white;
-  padding: 30px;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-}
-
-.stat-number {
-  display: block;
-  font-size: 42px;
-  font-weight: 800;
-  background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #666;
-  margin-top: 5px;
 }
 
 /* Sponsors Section */
@@ -260,25 +192,6 @@ onMounted(async () => {
   font-size: 13px;
   color: #888;
   margin-bottom: 15px;
-}
-
-.sponsor-stats {
-  margin-bottom: 15px;
-}
-
-.scholar-count {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: linear-gradient(135deg, rgba(26, 95, 164, 0.1) 0%, rgba(232, 135, 42, 0.1) 100%);
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-size: 14px;
-  color: #555;
-}
-
-.count-icon {
-  font-size: 20px;
 }
 
 .sponsor-message {
@@ -407,18 +320,6 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .sponsors-hero h1 {
     font-size: 36px;
-  }
-
-  .stats-container {
-    grid-template-columns: 1fr;
-  }
-
-  .stat-card {
-    padding: 20px;
-  }
-
-  .stat-number {
-    font-size: 32px;
   }
 }
 </style>
