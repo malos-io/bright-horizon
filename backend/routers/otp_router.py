@@ -123,8 +123,8 @@ async def verify_otp(request: OtpVerifyRequest):
 
     # Look up the user's role from student_users (if exists)
     student_collection = get_collection_name("student_users")
-    student_doc = db.collection(student_collection).document(email).get()
-    role = student_doc.to_dict().get("role", "applicant") if student_doc.exists else "applicant"
+    student_docs = list(db.collection(student_collection).where("email", "==", email).limit(1).stream())
+    role = student_docs[0].to_dict().get("role", "applicant") if student_docs else "applicant"
 
     # Fetch course data for enrichment (start date, deadline, instructor)
     from routers.course_router import get_courses
