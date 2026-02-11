@@ -207,7 +207,7 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
 
         # Send confirmation email with process overview
         try:
-            subject = f"Application Received: {application.course} - Bright Horizons Institute"
+            subject = f"Application Received: {application.course} - Bright Horizon Institute"
             html = get_application_submitted_email_html(application.firstName, application.course)
             await send_email(
                 to=application.email,
@@ -384,7 +384,7 @@ async def send_interview_schedule(
             start_date=start_date_fmt,
             enrollment_deadline=deadline_fmt,
         )
-        subject = f"Interview & Enrollment Schedule: {course_name} - Bright Horizons Institute"
+        subject = f"Interview & Enrollment Schedule: {course_name} - Bright Horizon Institute"
         await send_email(
             to=applicant_email,
             subject=subject,
@@ -534,7 +534,7 @@ async def complete_enrollment(
                     course=course_name,
                     start_date=start_date_fmt,
                 )
-                subject = f"Enrollment Confirmed: {course_name} - Bright Horizons Institute"
+                subject = f"Enrollment Confirmed: {course_name} - Bright Horizon Institute"
                 await send_email(
                     to=applicant_email,
                     subject=subject,
@@ -791,7 +791,7 @@ async def review_document(
             try:
                 if status == "rejected":
                     doc_label = REQUIRED_DOCUMENTS[doc_type]["label"]
-                    subject = f"Action Required: {doc_label} Needs Re-upload - Bright Horizons Institute"
+                    subject = f"Action Required: {doc_label} Needs Re-upload - Bright Horizon Institute"
                     html = get_document_rejected_email_html(applicant_name, doc_label, reject_reason.strip())
                     await send_email(
                         to=applicant_email,
@@ -801,7 +801,7 @@ async def review_document(
                     )
                     _log_email_sent(doc_ref, "document_rejected", subject, triggered_by=admin_email)
                 elif new_enrollment_status == "in_waitlist":
-                    subject = "Your Application Documents Have Been Accepted - Bright Horizons Institute"
+                    subject = "Your Application Documents Have Been Accepted - Bright Horizon Institute"
                     html = get_in_waitlist_email_html(applicant_name)
                     await send_email(
                         to=applicant_email,

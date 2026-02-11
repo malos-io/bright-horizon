@@ -7,7 +7,7 @@
     <div v-else class="admin-layout">
       <aside class="sidebar">
         <div class="sidebar-header">
-          <img :src="logo" alt="Bright Horizons Institute" class="sidebar-logo" />
+          <img :src="logo" alt="Bright Horizon Institute" class="sidebar-logo" />
           <h2>Admin Portal</h2>
         </div>
         <nav class="sidebar-nav">

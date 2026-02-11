@@ -25,7 +25,7 @@ def create_facebook_cover():
     # Bottom accent bar
     draw.rectangle([0, COVER_HEIGHT - 6, COVER_WIDTH, COVER_HEIGHT], fill=brand_blue)
 
-    # Load and place main logo (Bright Horizons Institute)
+    # Load and place main logo (Bright Horizon Institute)
     # Position it to the RIGHT of center to avoid profile picture overlap
     main_logo = Image.open(main_logo_path).convert("RGBA")
     main_logo_height = 220

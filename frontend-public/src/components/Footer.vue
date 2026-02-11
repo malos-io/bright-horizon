@@ -3,8 +3,8 @@
     <div class="footer-container">
       <div class="footer-section">
         <div class="footer-logo">
-          <img :src="logo" alt="Bright Horizons Institute Inc." class="logo-img" />
-          <span class="logo-text">Bright Horizons Institute Inc.</span>
+          <img :src="logo" alt="Bright Horizon Institute Inc." class="logo-img" />
+          <span class="logo-text">Bright Horizon Institute Inc.</span>
         </div>
         <p class="footer-desc">
           Empowering individuals with industry-recognized skills and certifications
@@ -65,7 +65,7 @@
     </div>
 
     <div class="footer-bottom">
-      <p>&copy; 2026 Bright Horizons Institute Inc. All rights reserved.</p>
+      <p>&copy; 2026 Bright Horizon Institute Inc. All rights reserved.</p>
       <a :href="adminUrl" class="admin-link">Admin Login</a>
     </div>
   </footer>

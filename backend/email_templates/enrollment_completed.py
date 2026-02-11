@@ -24,7 +24,7 @@ def get_enrollment_completed_email_html(
                     <!-- Header -->
                     <tr>
                         <td style="background:#ffffff; padding:30px 40px 20px; text-align:center; border-bottom:3px solid #166534;">
-                            <img src="{logo_url}" alt="Bright Horizons Institute" style="height:70px; display:inline-block;" />
+                            <img src="{logo_url}" alt="Bright Horizon Institute" style="height:70px; display:inline-block;" />
                         </td>
                     </tr>
 
@@ -43,7 +43,7 @@ def get_enrollment_completed_email_html(
                                 Dear <strong>{name}</strong>,
                             </p>
                             <p style="margin:0 0 20px; color:#334155; font-size:15px; line-height:1.7;">
-                                We are pleased to confirm that your enrollment for <strong>{course}</strong> has been <strong>successfully completed</strong>. You are now officially a student at Bright Horizons Institute.
+                                We are pleased to confirm that your enrollment for <strong>{course}</strong> has been <strong>successfully completed</strong>. You are now officially a student at Bright Horizon Institute.
                             </p>
 
                             <!-- Success Box -->
@@ -83,7 +83,7 @@ def get_enrollment_completed_email_html(
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 25px;">
                                 <tr>
                                     <td style="padding:6px 0; color:#334155; font-size:14px; line-height:1.6;">
-                                        &#10003; You now have a <strong>student account</strong> at Bright Horizons Institute.
+                                        &#10003; You now have a <strong>student account</strong> at Bright Horizon Institute.
                                     </td>
                                 </tr>
                                 <tr>
@@ -118,7 +118,7 @@ def get_enrollment_completed_email_html(
                     <tr>
                         <td style="background:#f8f9fb; padding:20px 40px; border-top:1px solid #eee; text-align:center;">
                             <p style="margin:0; color:#aaa; font-size:12px;">
-                                &copy; 2026 Bright Horizons Institute Inc.<br>
+                                &copy; 2026 Bright Horizon Institute Inc.<br>
                                 This is an automated message. Please do not reply.
                             </p>
                         </td>

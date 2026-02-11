@@ -22,7 +22,7 @@ def get_application_submitted_email_html(name: str, course: str) -> str:
                     <!-- Header -->
                     <tr>
                         <td style="background:#ffffff; padding:30px 40px; text-align:center; border-bottom:2px solid #e8e8e8;">
-                            <img src="{logo_url}" alt="Bright Horizons Institute" style="height:70px; display:inline-block;" />
+                            <img src="{logo_url}" alt="Bright Horizon Institute" style="height:70px; display:inline-block;" />
                         </td>
                     </tr>
                     <!-- Body -->
@@ -33,7 +33,7 @@ def get_application_submitted_email_html(name: str, course: str) -> str:
                                 Hi {name},
                             </p>
                             <p style="margin:0 0 20px; color:#555; font-size:15px; line-height:1.6;">
-                                Thank you for your interest in enrolling at Bright Horizons Institute. We have received your application for:
+                                Thank you for your interest in enrolling at Bright Horizon Institute. We have received your application for:
                             </p>
                             <!-- Course Box -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 25px;">
@@ -129,7 +129,7 @@ def get_application_submitted_email_html(name: str, course: str) -> str:
                     <tr>
                         <td style="background:#f8f9fb; padding:20px 40px; border-top:1px solid #eee; text-align:center;">
                             <p style="margin:0; color:#aaa; font-size:12px;">
-                                &copy; 2026 Bright Horizons Institute Inc.<br>
+                                &copy; 2026 Bright Horizon Institute Inc.<br>
                                 This is an automated message. Please do not reply.
                             </p>
                         </td>

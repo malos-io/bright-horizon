@@ -48,7 +48,7 @@ def get_interview_schedule_email_html(
                     <!-- Header -->
                     <tr>
                         <td style="background:#ffffff; padding:30px 40px 20px; text-align:center; border-bottom:3px solid #1a5fa4;">
-                            <img src="{logo_url}" alt="Bright Horizons Institute" style="height:70px; display:inline-block;" />
+                            <img src="{logo_url}" alt="Bright Horizon Institute" style="height:70px; display:inline-block;" />
                         </td>
                     </tr>
 
@@ -76,7 +76,7 @@ def get_interview_schedule_email_html(
                                     <td style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:20px 24px;">
                                         <h3 style="margin:0 0 10px; color:#1e40af; font-size:15px;">What you need to do:</h3>
                                         <p style="margin:0; color:#1e40af; font-size:14px; line-height:1.7;">
-                                            Report to <strong>Bright Horizons Institute</strong> to submit the <strong>original copies</strong> of your documents for physical verification and undergo a brief interview with our admissions team.
+                                            Report to <strong>Bright Horizon Institute</strong> to submit the <strong>original copies</strong> of your documents for physical verification and undergo a brief interview with our admissions team.
                                         </p>
                                     </td>
                                 </tr>
@@ -147,7 +147,7 @@ def get_interview_schedule_email_html(
                             </table>
 
                             <p style="margin:0 0 8px; color:#334155; font-size:15px; line-height:1.7;">
-                                We look forward to seeing you at Bright Horizons Institute. If you have any questions or need assistance, please don't hesitate to reach out.
+                                We look forward to seeing you at Bright Horizon Institute. If you have any questions or need assistance, please don't hesitate to reach out.
                             </p>
                         </td>
                     </tr>
@@ -166,7 +166,7 @@ def get_interview_schedule_email_html(
                     <tr>
                         <td style="background:#f8f9fb; padding:20px 40px; border-top:1px solid #eee; text-align:center;">
                             <p style="margin:0; color:#aaa; font-size:12px;">
-                                &copy; 2026 Bright Horizons Institute Inc.<br>
+                                &copy; 2026 Bright Horizon Institute Inc.<br>
                                 This is an automated message. Please do not reply.
                             </p>
                         </td>

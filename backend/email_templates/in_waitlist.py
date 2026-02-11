@@ -20,7 +20,7 @@ def get_in_waitlist_email_html(name: str) -> str:
                     <!-- Header -->
                     <tr>
                         <td style="background:#ffffff; padding:30px 40px; text-align:center; border-bottom:2px solid #e8e8e8;">
-                            <img src="{logo_url}" alt="Bright Horizons Institute" style="height:70px; display:inline-block;" />
+                            <img src="{logo_url}" alt="Bright Horizon Institute" style="height:70px; display:inline-block;" />
                         </td>
                     </tr>
                     <!-- Body -->
@@ -47,7 +47,7 @@ def get_in_waitlist_email_html(name: str) -> str:
                                 Your application has been placed on our <strong>waitlist</strong>. Our admissions team will be in touch with you regarding the next steps of your enrollment process.
                             </p>
                             <p style="margin:0 0 25px; color:#555; font-size:15px; line-height:1.6;">
-                                Please wait for further instructions from our team. We appreciate your patience and look forward to welcoming you at Bright Horizons Institute.
+                                Please wait for further instructions from our team. We appreciate your patience and look forward to welcoming you at Bright Horizon Institute.
                             </p>
                             <p style="margin:0; color:#888; font-size:13px; line-height:1.6; text-align:center;">
                                 If you have any questions, please contact us at<br>
@@ -59,7 +59,7 @@ def get_in_waitlist_email_html(name: str) -> str:
                     <tr>
                         <td style="background:#f8f9fb; padding:20px 40px; border-top:1px solid #eee; text-align:center;">
                             <p style="margin:0; color:#aaa; font-size:12px;">
-                                &copy; 2026 Bright Horizons Institute Inc.<br>
+                                &copy; 2026 Bright Horizon Institute Inc.<br>
                                 This is an automated message. Please do not reply.
                             </p>
                         </td>

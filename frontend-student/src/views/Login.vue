@@ -1,9 +1,9 @@
 <template>
   <div class="login-page">
     <div class="login-card">
-      <img :src="logo" alt="Bright Horizons Institute" class="login-logo" />
+      <img :src="logo" alt="Bright Horizon Institute" class="login-logo" />
       <h1>Student Portal</h1>
-      <p class="login-tagline">Bright Horizons Institute Inc.</p>
+      <p class="login-tagline">Bright Horizon Institute Inc.</p>
 
       <!-- Step 1: Email -->
       <template v-if="step === 'email'">

@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <div class="login-card">
-      <img :src="logo" alt="Bright Horizons Institute" class="login-logo" />
+      <img :src="logo" alt="Bright Horizon Institute" class="login-logo" />
       <h1>Admin Portal</h1>
       <p v-if="error === 'unauthorized'" class="error-msg">
         Access denied. Your account is not authorized for admin access.

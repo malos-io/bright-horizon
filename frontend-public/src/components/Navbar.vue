@@ -16,9 +16,9 @@
     <nav class="navbar">
       <div class="nav-container">
         <router-link to="/" class="nav-logo">
-          <img :src="logo" alt="Bright Horizons Institute Inc." class="logo-img" />
+          <img :src="logo" alt="Bright Horizon Institute Inc." class="logo-img" />
           <div class="logo-text-wrapper">
-            <span class="logo-text">Bright Horizons Institute Inc.</span>
+            <span class="logo-text">Bright Horizon Institute Inc.</span>
             <span class="logo-tagline">Where Future Shines Bright</span>
           </div>
         </router-link>

@@ -72,7 +72,7 @@ async def send_otp(request: OtpSendRequest):
     try:
         await send_email(
             to=email,
-            subject="Your Verification Code - Bright Horizons Institute",
+            subject="Your Verification Code - Bright Horizon Institute",
             html_content=html,
         )
     except Exception as e:

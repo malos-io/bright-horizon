@@ -22,7 +22,7 @@ def get_document_rejected_email_html(name: str, document_label: str, reject_reas
                     <!-- Header -->
                     <tr>
                         <td style="background:#ffffff; padding:30px 40px; text-align:center; border-bottom:2px solid #e8e8e8;">
-                            <img src="{logo_url}" alt="Bright Horizons Institute" style="height:70px; display:inline-block;" />
+                            <img src="{logo_url}" alt="Bright Horizon Institute" style="height:70px; display:inline-block;" />
                         </td>
                     </tr>
                     <!-- Body -->
@@ -71,7 +71,7 @@ def get_document_rejected_email_html(name: str, document_label: str, reject_reas
                     <tr>
                         <td style="background:#f8f9fb; padding:20px 40px; border-top:1px solid #eee; text-align:center;">
                             <p style="margin:0; color:#aaa; font-size:12px;">
-                                &copy; 2026 Bright Horizons Institute Inc.<br>
+                                &copy; 2026 Bright Horizon Institute Inc.<br>
                                 This is an automated message. Please do not reply.
                             </p>
                         </td>

@@ -101,7 +101,7 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <strong>Next Step: Physical Documents &amp; Interview</strong>
               </div>
-              <p>Please visit <strong>Bright Horizons Institute</strong> in person to submit original copies of your documents and undergo a brief admissions interview.</p>
+              <p>Please visit <strong>Bright Horizon Institute</strong> in person to submit original copies of your documents and undergo a brief admissions interview.</p>
               <div class="action-banner-checklist">
                 <span>Bring the following:</span>
                 <ul>
@@ -176,7 +176,7 @@
               <span class="status-badge" :class="'status-' + selectedEnrollment.status">{{ formatStatus(selectedEnrollment.status) }}</span>
             </div>
 
-            <div v-if="selectedEnrollment.status === 'physical_docs_required'" class="status-note status-note-info">Please visit <strong>Bright Horizons Institute</strong> in person to submit the <strong>original copies</strong> of your documents for verification and undergo a brief interview with our admissions team. Please bring: Birth Certificate (PSA/NSO), Educational Credentials, Government-Issued ID, and ID Photos (1x1 &amp; 2x2, white background).</div>
+            <div v-if="selectedEnrollment.status === 'physical_docs_required'" class="status-note status-note-info">Please visit <strong>Bright Horizon Institute</strong> in person to submit the <strong>original copies</strong> of your documents for verification and undergo a brief interview with our admissions team. Please bring: Birth Certificate (PSA/NSO), Educational Credentials, Government-Issued ID, and ID Photos (1x1 &amp; 2x2, white background).</div>
             <div v-else-if="selectedEnrollment.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been reviewed and accepted. Your application is now on the waitlist. Please wait for further instructions from our admissions team.</div>
             <div v-else-if="selectedEnrollment.status === 'documents_rejected'" class="status-note status-note-warning">One or more documents need attention. Please check the Documents section below to review the feedback and re-upload as needed.</div>
 
