@@ -12,6 +12,7 @@
         </div>
 
         <span class="category-badge">{{ course.category }}</span>
+        <span v-if="course.is_coming_soon" class="coming-soon-badge-large">Coming Soon</span>
         <h1>{{ course.title }}</h1>
         <p class="hero-desc">{{ course.short_description }}</p>
 
@@ -38,18 +39,30 @@
       <div class="course-card-sticky">
         <div class="card-image">
           <img :src="course.image" :alt="course.title" />
+          <div v-if="course.is_coming_soon" class="coming-soon-overlay">
+            <div class="coming-soon-text">Coming Soon</div>
+          </div>
         </div>
         <div class="card-content">
-          <div class="contact-pricing">
-            <span class="contact-pricing-icon">&#128172;</span>
-            <span class="contact-pricing-text">Contact us for pricing</span>
+          <div v-if="course.is_coming_soon" class="coming-soon-notice">
+            <span class="notice-icon">&#128337;</span>
+            <div>
+              <div class="notice-title">Coming Soon</div>
+              <div class="notice-text">This course will be available for enrollment soon</div>
+            </div>
           </div>
-          <div class="scholarship-banner">
-            <span class="scholarship-icon">&#127891;</span>
-            <span class="scholarship-text">Scholarship Available</span>
-          </div>
+          <div v-else>
+            <div class="contact-pricing">
+              <span class="contact-pricing-icon">&#128172;</span>
+              <span class="contact-pricing-text">Contact us for pricing</span>
+            </div>
+            <div class="scholarship-banner">
+              <span class="scholarship-icon">&#127891;</span>
+              <span class="scholarship-text">Scholarship Available</span>
+            </div>
 
-          <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary btn-full">Apply for Class Now</router-link>
+            <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary btn-full">Apply for Class Now</router-link>
+          </div>
 
           <div class="card-features">
             <h4>This course includes:</h4>
@@ -168,7 +181,7 @@
     </div>
 
     <!-- Mobile Sticky CTA -->
-    <div class="mobile-cta">
+    <div class="mobile-cta" v-if="!course.is_coming_soon">
       <div class="mobile-price">
         <span class="contact-pricing-label">Contact us for pricing</span>
         <span class="scholarship-label">&#127891; Scholarship Available</span>
@@ -285,6 +298,17 @@ const formatDescription = (desc) => {
   margin-bottom: 15px;
 }
 
+.coming-soon-badge-large {
+  background: #ff9800;
+  color: white;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
+  margin-left: 12px;
+}
+
 .course-hero h1 {
   font-size: 36px;
   font-weight: 800;
@@ -361,10 +385,40 @@ const formatDescription = (desc) => {
   top: 90px;
 }
 
+.card-image {
+  position: relative;
+}
+
 .card-image img {
   width: 100%;
   height: 200px;
   object-fit: cover;
+}
+
+.coming-soon-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.coming-soon-text {
+  background: #ff9800;
+  color: white;
+  padding: 12px 30px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 20px rgba(255, 152, 0, 0.5);
+  transform: rotate(-5deg);
 }
 
 .card-content {
@@ -411,6 +465,33 @@ const formatDescription = (desc) => {
   font-size: 14px;
   font-weight: 600;
   color: #e65100;
+}
+
+.coming-soon-notice {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #fff3e0;
+  border: 2px solid #ff9800;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.notice-icon {
+  font-size: 36px;
+}
+
+.notice-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e65100;
+  margin-bottom: 4px;
+}
+
+.notice-text {
+  font-size: 14px;
+  color: #666;
 }
 
 .btn {

@@ -190,6 +190,180 @@ This TESDA-accredited qualification prepares you for careers in the tourism and 
         rating=0,
         reviews_count=0
     ),
+    Course(
+        id="3",
+        slug="housekeeping-nc-iii",
+        title="Housekeeping NC III",
+        short_description="Learn professional housekeeping skills for hotels, resorts, and other hospitality establishments.",
+        description="""This comprehensive Housekeeping NC III program prepares you for careers in the hospitality industry with essential housekeeping skills and competencies.
+
+You will learn professional cleaning techniques, room preparation, guest service excellence, and workplace health and safety practices required in hotels, resorts, hospitals, and other establishments.
+
+This TESDA-accredited program equips you with the skills needed to work as a professional housekeeper in various hospitality settings.""",
+        image="/images/courses/housekeeping.png",
+        duration_weeks=4,
+        total_hours=148,
+        price=0,
+        discounted_price=None,
+        category="Tourism & Hospitality",
+        level="Beginner",
+        certification="TESDA NC III Certified",
+        class_size=25,
+        start_dates=["TBA"],
+        schedule=[
+            CourseSchedule(day="Self-paced", time="Online", duration="Flexible"),
+        ],
+        modules=[
+            CourseModule(
+                title="Participate in Workplace Communication",
+                description="Develop effective communication skills in housekeeping settings",
+                duration_hours=20
+            ),
+            CourseModule(
+                title="Work in a Team Environment",
+                description="Learn to work effectively with colleagues and supervisors",
+                duration_hours=16
+            ),
+            CourseModule(
+                title="Practice Career Professionalism",
+                description="Develop professional attitudes and workplace ethics",
+                duration_hours=16
+            ),
+            CourseModule(
+                title="Practice Occupational Health and Safety Procedures",
+                description="Learn workplace safety protocols and emergency procedures",
+                duration_hours=16
+            ),
+            CourseModule(
+                title="Clean and Prepare Rooms for Guests",
+                description="Master techniques for cleaning and preparing guest rooms to standards",
+                duration_hours=32
+            ),
+            CourseModule(
+                title="Provide Housekeeping Services to Guests",
+                description="Learn guest service protocols and responding to guest requests",
+                duration_hours=24
+            ),
+            CourseModule(
+                title="Provide Valet/Butler Service",
+                description="Develop skills in providing personalized guest services",
+                duration_hours=24
+            ),
+        ],
+        requirements=[
+            "At least 18 years old",
+            "High school graduate or equivalent",
+            "Physically fit for housekeeping duties",
+            "Good communication skills",
+            "Attention to detail",
+        ],
+        what_you_learn=[
+            "Professional room cleaning and preparation techniques",
+            "Guest service excellence and etiquette",
+            "Workplace health and safety procedures",
+            "Linen and laundry management",
+            "Valet and butler service skills",
+            "Effective workplace communication",
+        ],
+        career_opportunities=[
+            "Room Attendant/Housekeeper",
+            "Housekeeping Supervisor",
+            "Hotel/Resort Housekeeping Staff",
+            "Hospital Housekeeper",
+            "Institutional Housekeeper",
+            "Private Household Staff",
+        ],
+        instructor=INSTRUCTORS["default"],
+        enrolled_count=0,
+        rating=0,
+        reviews_count=0,
+        is_coming_soon=True
+    ),
+    Course(
+        id="4",
+        slug="hilot-wellness-nc-ii",
+        title="Hilot (Wellness Massage) NC II",
+        short_description="Learn traditional Filipino wellness massage techniques for health, relaxation, and therapeutic purposes.",
+        description="""This comprehensive Hilot (Wellness Massage) NC II program trains you in traditional Filipino healing and wellness massage techniques.
+
+You will learn the fundamentals of hilot, traditional massage strokes, body assessment, and therapeutic applications for wellness and health maintenance. This includes both theoretical knowledge and practical skills in traditional Filipino healing arts.
+
+This TESDA-accredited program prepares you for careers in wellness centers, spas, resorts, and health facilities as a certified hilot practitioner.""",
+        image="/images/courses/hilot.png",
+        duration_weeks=3,
+        total_hours=124,
+        price=0,
+        discounted_price=None,
+        category="Health & Wellness",
+        level="Beginner",
+        certification="TESDA NC II Certified",
+        class_size=20,
+        start_dates=["TBA"],
+        schedule=[
+            CourseSchedule(day="Self-paced", time="Online", duration="Flexible"),
+        ],
+        modules=[
+            CourseModule(
+                title="Participate in Workplace Communication",
+                description="Develop effective communication skills with clients and colleagues",
+                duration_hours=16
+            ),
+            CourseModule(
+                title="Work in a Team Environment",
+                description="Learn to collaborate effectively in wellness settings",
+                duration_hours=12
+            ),
+            CourseModule(
+                title="Practice Career Professionalism",
+                description="Develop professional ethics and workplace standards",
+                duration_hours=12
+            ),
+            CourseModule(
+                title="Practice Occupational Health and Safety Procedures",
+                description="Learn safety protocols and hygiene standards for wellness massage",
+                duration_hours=16
+            ),
+            CourseModule(
+                title="Perform Hilot/Wellness Massage",
+                description="Master traditional hilot techniques, strokes, and therapeutic applications",
+                duration_hours=48
+            ),
+            CourseModule(
+                title="Provide Aftercare Advice",
+                description="Learn to provide post-treatment care and wellness recommendations",
+                duration_hours=20
+            ),
+        ],
+        requirements=[
+            "At least 18 years old",
+            "High school graduate or equivalent",
+            "Physically fit for manual work",
+            "Good communication and interpersonal skills",
+            "Interest in traditional Filipino healing arts",
+            "No history of infectious diseases",
+        ],
+        what_you_learn=[
+            "Traditional Filipino hilot massage techniques",
+            "Body assessment and palpation skills",
+            "Therapeutic massage strokes and applications",
+            "Client consultation and needs assessment",
+            "Health and safety in wellness massage",
+            "Aftercare advice and wellness recommendations",
+        ],
+        career_opportunities=[
+            "Hilot Practitioner",
+            "Wellness Massage Therapist",
+            "Spa Therapist",
+            "Resort Wellness Staff",
+            "Health Center Massage Therapist",
+            "Self-employed Hilot Specialist",
+        ],
+        instructor=INSTRUCTORS["default"],
+        enrolled_count=0,
+        rating=0,
+        reviews_count=0,
+        is_coming_soon=True
+    ),
 ]
 
 # Build a lookup by slug for quick access

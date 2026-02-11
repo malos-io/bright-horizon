@@ -339,7 +339,7 @@
             <label>Select Course <span class="required">*</span></label>
             <select v-model="form.course" required class="course-select">
               <option value="">-- Select a course --</option>
-              <option v-for="c in courses" :key="c.slug" :value="c.title">{{ c.title }}</option>
+              <option v-for="c in availableCourses" :key="c.slug" :value="c.title">{{ c.title }}</option>
             </select>
           </div>
         </div>
@@ -426,6 +426,11 @@ const submitting = ref(false)
 const submitted = ref(false)
 const applicationId = ref('')
 const requirementsCollapsed = ref(false)
+
+// Filter out coming soon courses
+const availableCourses = computed(() => {
+  return courses.value.filter(c => !c.is_coming_soon)
+})
 
 // Mailing address cascading dropdowns (with barangay)
 const address = useAddressDropdown({ withBarangay: true })
@@ -531,6 +536,12 @@ onMounted(async () => {
     if (slug) {
       const match = courses.value.find(c => c.slug === slug)
       if (match) {
+        // Prevent enrollment for coming soon courses
+        if (match.is_coming_soon) {
+          alert('This course is coming soon and not yet available for enrollment.')
+          window.location.href = '/courses'
+          return
+        }
         form.course = match.title
       }
     }

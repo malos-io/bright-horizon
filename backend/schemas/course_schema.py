@@ -47,3 +47,4 @@ class Course(BaseModel):
     enrolled_count: int
     rating: float
     reviews_count: int
+    is_coming_soon: bool = False

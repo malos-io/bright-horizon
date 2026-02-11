@@ -3,9 +3,12 @@
     <div class="card-image">
       <img :src="course.image" :alt="course.title" />
       <span class="category-badge">{{ course.category }}</span>
-      <span v-if="course.discounted_price" class="discount-badge">
+      <span v-if="!course.is_coming_soon && course.discounted_price" class="discount-badge">
         {{ getDiscount() }}% OFF
       </span>
+      <div v-if="course.is_coming_soon" class="coming-soon-overlay">
+        <div class="coming-soon-text">Coming Soon</div>
+      </div>
     </div>
 
     <div class="card-content">
@@ -48,9 +51,10 @@
 
       <div class="card-footer">
         <div class="price-section">
-          <span class="current-price">Contact us for pricing</span>
+          <span class="current-price">{{ course.is_coming_soon ? 'Available Soon' : 'Contact us for pricing' }}</span>
         </div>
-        <button class="enroll-btn">View Course</button>
+        <button v-if="course.is_coming_soon" class="coming-soon-btn" disabled>Coming Soon</button>
+        <button v-else class="enroll-btn">View Course</button>
       </div>
     </div>
   </router-link>
@@ -139,6 +143,32 @@ const getDiscount = () => {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.coming-soon-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.coming-soon-text {
+  background: #ff9800;
+  color: white;
+  padding: 16px 40px;
+  border-radius: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  box-shadow: 0 4px 20px rgba(255, 152, 0, 0.5);
+  transform: rotate(-5deg);
 }
 
 .card-content {
@@ -269,5 +299,17 @@ const getDiscount = () => {
 .enroll-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(26, 95, 164, 0.4);
+}
+
+.coming-soon-btn {
+  background: #ccc;
+  color: #666;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: not-allowed;
+  opacity: 0.7;
 }
 </style>
