@@ -57,7 +57,6 @@ steps:
         docker build \
           -t asia-southeast1-docker.pkg.dev/$PROJECT_ID/training-center/training-frontend-public-prod:$COMMIT_SHA \
           -t asia-southeast1-docker.pkg.dev/$PROJECT_ID/training-center/training-frontend-public-prod:latest \
-          --build-arg BUILD_SCRIPT=build:prod \
           --target cloudrun \
           ./frontend-public
     id: 'build-frontend-public'
@@ -104,7 +103,6 @@ steps:
         docker build \
           -t asia-southeast1-docker.pkg.dev/$PROJECT_ID/training-center/training-frontend-admin-prod:$COMMIT_SHA \
           -t asia-southeast1-docker.pkg.dev/$PROJECT_ID/training-center/training-frontend-admin-prod:latest \
-          --build-arg BUILD_SCRIPT=build:prod \
           --build-arg VITE_ZOHO_CLIENT_ID=$$ZOHO_CLIENT_ID \
           --target cloudrun \
           ./frontend-admin
@@ -151,7 +149,6 @@ steps:
         docker build \
           -t asia-southeast1-docker.pkg.dev/$PROJECT_ID/training-center/training-frontend-student-prod:$COMMIT_SHA \
           -t asia-southeast1-docker.pkg.dev/$PROJECT_ID/training-center/training-frontend-student-prod:latest \
-          --build-arg BUILD_SCRIPT=build:prod \
           --target cloudrun \
           ./frontend-student
     id: 'build-frontend-student'
