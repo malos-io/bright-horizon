@@ -5,6 +5,13 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
+ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
+
+_SUBJECT_PREFIX = {
+    "dev": "[DEVELOPMENT] ",
+    "staging": "[STAGING] ",
+}
+
 ZOHO_MAIL_CLIENT_ID = os.getenv("ZOHO_MAIL_SELF_CLIENT_ID", "")
 ZOHO_MAIL_CLIENT_SECRET = os.getenv("ZOHO_MAIL_SELF_SECRET_ID", "")
 ZOHO_MAIL_REFRESH_TOKEN = os.getenv("ZOHO_MAIL_REFRESH_TOKEN", "")
@@ -97,6 +104,10 @@ async def send_email(to: str, subject: str, html_content: str, from_email: str =
     Raises:
         RuntimeError: If sending fails
     """
+    # Prefix subject with environment tag for non-prod
+    prefix = _SUBJECT_PREFIX.get(ENVIRONMENT, "")
+    subject = f"{prefix}{subject}"
+
     account_id = await _get_account_id()
     url = f"{ZOHO_MAIL_API}/accounts/{account_id}/messages"
 
