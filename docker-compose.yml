@@ -16,14 +16,40 @@ services:
       retries: 3
       start_period: 10s
 
-  frontend:
+  frontend-public:
     build:
-      context: ./frontend
+      context: ./frontend-public
       dockerfile: Dockerfile
-    container_name: training-center-web
+    container_name: training-center-public
     restart: unless-stopped
     ports:
       - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - training-network
+
+  frontend-admin:
+    build:
+      context: ./frontend-admin
+      dockerfile: Dockerfile
+    container_name: training-center-admin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+    networks:
+      - training-network
+
+  frontend-student:
+    build:
+      context: ./frontend-student
+      dockerfile: Dockerfile
+    container_name: training-center-student
+    restart: unless-stopped
+    ports:
+      - "8082:80"
     depends_on:
       - backend
     networks:

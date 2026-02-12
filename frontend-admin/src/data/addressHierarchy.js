@@ -1,0 +1,258 @@
+// Philippine geographic hierarchy for Region IX and Region X
+// Source: Philippine Standard Geographic Code (PSGC) - PSA
+export const addressData = {
+  regions: [
+    {
+      name: "Region IX (Zamboanga Peninsula)",
+      provinces: [
+        {
+          name: "Zamboanga del Norte",
+          cities: [
+            // 1st District
+            { name: "Dapitan City", district: "1st District" },
+            { name: "La Libertad", district: "1st District" },
+            { name: "Mutia", district: "1st District" },
+            { name: "Pinan", district: "1st District" },
+            { name: "Polanco", district: "1st District" },
+            { name: "Rizal", district: "1st District" },
+            { name: "Sergio Osmena Sr.", district: "1st District" },
+            { name: "Sibutad", district: "1st District" },
+            // 2nd District
+            { name: "Dipolog City", district: "2nd District" },
+            { name: "Jose Dalman", district: "2nd District" },
+            { name: "Katipunan", district: "2nd District" },
+            { name: "Manukan", district: "2nd District" },
+            { name: "President Manuel A. Roxas", district: "2nd District" },
+            { name: "Siayan", district: "2nd District" },
+            { name: "Sindangan", district: "2nd District" },
+            // 3rd District
+            { name: "Baliguian", district: "3rd District" },
+            { name: "Godod", district: "3rd District" },
+            { name: "Gutalac", district: "3rd District" },
+            { name: "Kalawit", district: "3rd District" },
+            { name: "Labason", district: "3rd District" },
+            { name: "Leon B. Postigo", district: "3rd District" },
+            { name: "Liloy", district: "3rd District" },
+            { name: "Salug", district: "3rd District" },
+            { name: "Sibuco", district: "3rd District" },
+            { name: "Siocon", district: "3rd District" },
+            { name: "Sirawai", district: "3rd District" },
+            { name: "Tampilisan", district: "3rd District" },
+          ],
+        },
+        {
+          name: "Zamboanga del Sur",
+          cities: [
+            // 1st District
+            { name: "Pagadian City", district: "1st District" },
+            { name: "Aurora", district: "1st District" },
+            { name: "Dumingag", district: "1st District" },
+            { name: "Josefina", district: "1st District" },
+            { name: "Labangan", district: "1st District" },
+            { name: "Mahayag", district: "1st District" },
+            { name: "Midsalip", district: "1st District" },
+            { name: "Molave", district: "1st District" },
+            { name: "Ramon Magsaysay", district: "1st District" },
+            { name: "Sominot", district: "1st District" },
+            { name: "Tambulig", district: "1st District" },
+            { name: "Tukuran", district: "1st District" },
+            // 2nd District
+            { name: "Bayog", district: "2nd District" },
+            { name: "Dimataling", district: "2nd District" },
+            { name: "Dinas", district: "2nd District" },
+            { name: "Dumalinao", district: "2nd District" },
+            { name: "Guipos", district: "2nd District" },
+            { name: "Kumalarang", district: "2nd District" },
+            { name: "Lakewood", district: "2nd District" },
+            { name: "Lapuyan", district: "2nd District" },
+            { name: "Margosatubig", district: "2nd District" },
+            { name: "Pitogo", district: "2nd District" },
+            { name: "San Miguel", district: "2nd District" },
+            { name: "San Pablo", district: "2nd District" },
+            { name: "Tabina", district: "2nd District" },
+            { name: "Tigbao", district: "2nd District" },
+            { name: "Vincenzo A. Sagun", district: "2nd District" },
+          ],
+        },
+        {
+          name: "Zamboanga Sibugay",
+          cities: [
+            // 1st District
+            { name: "Alicia", district: "1st District" },
+            { name: "Buug", district: "1st District" },
+            { name: "Diplahan", district: "1st District" },
+            { name: "Imelda", district: "1st District" },
+            { name: "Mabuhay", district: "1st District" },
+            { name: "Malangas", district: "1st District" },
+            { name: "Olutanga", district: "1st District" },
+            { name: "Payao", district: "1st District" },
+            { name: "Talusan", district: "1st District" },
+            // 2nd District
+            { name: "Ipil", district: "2nd District" },
+            { name: "Kabasalan", district: "2nd District" },
+            { name: "Naga", district: "2nd District" },
+            { name: "Roseller Lim", district: "2nd District" },
+            { name: "Siay", district: "2nd District" },
+            { name: "Titay", district: "2nd District" },
+            { name: "Tungawan", district: "2nd District" },
+          ],
+        },
+        {
+          name: "Zamboanga City",
+          cities: [
+            { name: "Zamboanga City", district: "Lone District" },
+          ],
+        },
+        {
+          name: "Isabela City",
+          cities: [
+            { name: "Isabela City", district: "Lone District" },
+          ],
+        },
+      ],
+    },
+    {
+      name: "Region X (Northern Mindanao)",
+      provinces: [
+        {
+          name: "Bukidnon",
+          cities: [
+            // 1st District
+            { name: "Baungon", district: "1st District" },
+            { name: "Libona", district: "1st District" },
+            { name: "Malitbog", district: "1st District" },
+            { name: "Manolo Fortich", district: "1st District" },
+            { name: "Sumilao", district: "1st District" },
+            { name: "Talakag", district: "1st District" },
+            // 2nd District
+            { name: "Malaybalay City", district: "2nd District" },
+            { name: "Cabanglasan", district: "2nd District" },
+            { name: "Impasugong", district: "2nd District" },
+            { name: "Lantapan", district: "2nd District" },
+            { name: "San Fernando", district: "2nd District" },
+            // 3rd District
+            { name: "Damulog", district: "3rd District" },
+            { name: "Dangcagan", district: "3rd District" },
+            { name: "Don Carlos", district: "3rd District" },
+            { name: "Kadingilan", district: "3rd District" },
+            { name: "Kibawe", district: "3rd District" },
+            { name: "Kitaotao", district: "3rd District" },
+            { name: "Maramag", district: "3rd District" },
+            { name: "Quezon", district: "3rd District" },
+            // 4th District
+            { name: "Valencia City", district: "4th District" },
+            { name: "Kalilangan", district: "4th District" },
+            { name: "Pangantucan", district: "4th District" },
+          ],
+        },
+        {
+          name: "Camiguin",
+          cities: [
+            { name: "Catarman", district: "Lone District" },
+            { name: "Guinsiliban", district: "Lone District" },
+            { name: "Mahinog", district: "Lone District" },
+            { name: "Mambajao", district: "Lone District" },
+            { name: "Sagay", district: "Lone District" },
+          ],
+        },
+        {
+          name: "Lanao del Norte",
+          cities: [
+            // 1st District
+            { name: "Bacolod", district: "1st District" },
+            { name: "Balo-i", district: "1st District" },
+            { name: "Baroy", district: "1st District" },
+            { name: "Kauswagan", district: "1st District" },
+            { name: "Kolambugan", district: "1st District" },
+            { name: "Linamon", district: "1st District" },
+            { name: "Maigo", district: "1st District" },
+            { name: "Matungao", district: "1st District" },
+            { name: "Pantar", district: "1st District" },
+            { name: "Tagoloan", district: "1st District" },
+            { name: "Tubod", district: "1st District" },
+            // 2nd District
+            { name: "Kapatagan", district: "2nd District" },
+            { name: "Lala", district: "2nd District" },
+            { name: "Magsaysay", district: "2nd District" },
+            { name: "Munai", district: "2nd District" },
+            { name: "Nunungan", district: "2nd District" },
+            { name: "Pantao Ragat", district: "2nd District" },
+            { name: "Poona Piagapo", district: "2nd District" },
+            { name: "Salvador", district: "2nd District" },
+            { name: "Sapad", district: "2nd District" },
+            { name: "Sultan Naga Dimaporo", district: "2nd District" },
+            { name: "Tangcal", district: "2nd District" },
+          ],
+        },
+        {
+          name: "Misamis Occidental",
+          cities: [
+            // 1st District
+            { name: "Oroquieta City", district: "1st District" },
+            { name: "Aloran", district: "1st District" },
+            { name: "Baliangao", district: "1st District" },
+            { name: "Calamba", district: "1st District" },
+            { name: "Concepcion", district: "1st District" },
+            { name: "Jimenez", district: "1st District" },
+            { name: "Lopez Jaena", district: "1st District" },
+            { name: "Panaon", district: "1st District" },
+            { name: "Plaridel", district: "1st District" },
+            { name: "Sapang Dalaga", district: "1st District" },
+            // 2nd District
+            { name: "Ozamiz City", district: "2nd District" },
+            { name: "Tangub City", district: "2nd District" },
+            { name: "Bonifacio", district: "2nd District" },
+            { name: "Clarin", district: "2nd District" },
+            { name: "Don Victoriano Chiongbian", district: "2nd District" },
+            { name: "Sinacaban", district: "2nd District" },
+            { name: "Tudela", district: "2nd District" },
+          ],
+        },
+        {
+          name: "Misamis Oriental",
+          cities: [
+            // 1st District
+            { name: "Gingoog City", district: "1st District" },
+            { name: "Balingasag", district: "1st District" },
+            { name: "Balingoan", district: "1st District" },
+            { name: "Binuangan", district: "1st District" },
+            { name: "Kinoguitan", district: "1st District" },
+            { name: "Lagonglong", district: "1st District" },
+            { name: "Magsaysay", district: "1st District" },
+            { name: "Medina", district: "1st District" },
+            { name: "Salay", district: "1st District" },
+            { name: "Sugbongcogon", district: "1st District" },
+            { name: "Talisayan", district: "1st District" },
+            // 2nd District
+            { name: "El Salvador City", district: "2nd District" },
+            { name: "Alubijid", district: "2nd District" },
+            { name: "Claveria", district: "2nd District" },
+            { name: "Gitagum", district: "2nd District" },
+            { name: "Initao", district: "2nd District" },
+            { name: "Jasaan", district: "2nd District" },
+            { name: "Laguindingan", district: "2nd District" },
+            { name: "Libertad", district: "2nd District" },
+            { name: "Lugait", district: "2nd District" },
+            { name: "Manticao", district: "2nd District" },
+            { name: "Naawan", district: "2nd District" },
+            { name: "Opol", district: "2nd District" },
+            { name: "Tagoloan", district: "2nd District" },
+            { name: "Villanueva", district: "2nd District" },
+          ],
+        },
+        {
+          name: "Cagayan de Oro City",
+          cities: [
+            { name: "Cagayan de Oro City", district: "Lone District" },
+          ],
+        },
+        {
+          name: "Iligan City",
+          cities: [
+            { name: "Iligan City", district: "Lone District" },
+          ],
+        },
+      ],
+    },
+  ],
+}
