@@ -40,6 +40,11 @@ export const submitEnrollment = async (data) => {
   return response.data
 }
 
+export const submitInstructorApplication = async (data) => {
+  const response = await api.post('/instructor-applications', data)
+  return response.data
+}
+
 export const sendOtp = async (email) => {
   const response = await api.post('/otp/send', { email })
   return response.data

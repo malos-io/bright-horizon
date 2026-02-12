@@ -73,6 +73,24 @@
       </div>
     </section>
 
+    <!-- Instructor Recruitment Section -->
+    <section class="teach-section">
+      <div class="teach-container">
+        <div class="teach-content">
+          <h2>Are you a <span class="highlight">TESDA-certified</span> instructor?</h2>
+          <p>We're looking for passionate, qualified trainers to join our growing team. Share your expertise and help shape the next generation of skilled professionals.</p>
+          <router-link to="/teach" class="btn btn-primary">Apply to Teach</router-link>
+        </div>
+        <div class="teach-visual">
+          <div class="teach-card">
+            <div class="teach-icon">&#128104;&#8205;&#127891;</div>
+            <h3>Let's Talk</h3>
+            <p>Tell us about your qualifications and the courses you'd like to teach.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="cta">
       <div class="cta-content">
@@ -417,6 +435,61 @@ onMounted(async () => {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
+/* Teach Section */
+.teach-section {
+  background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 50%, #f0f4ff 100%);
+  padding: 80px 20px;
+}
+
+.teach-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.teach-content h2 {
+  font-size: 32px;
+  font-weight: 800;
+  color: #1a1a2e;
+  line-height: 1.3;
+  margin-bottom: 15px;
+}
+
+.teach-content p {
+  font-size: 16px;
+  color: #666;
+  line-height: 1.7;
+  margin-bottom: 25px;
+}
+
+.teach-card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.teach-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.teach-card h3 {
+  font-size: 20px;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+}
+
+.teach-card p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
 /* CTA Section */
 .cta {
   background: linear-gradient(135deg, #0d3b6e 0%, #1a5fa4 100%);
@@ -516,6 +589,11 @@ onMounted(async () => {
 
   .features-container {
     grid-template-columns: 1fr;
+  }
+
+  .teach-container {
+    grid-template-columns: 1fr;
+    text-align: center;
   }
 
   .cta-actions {

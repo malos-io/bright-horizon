@@ -19,6 +19,14 @@
             <span class="nav-icon">&#9733;</span>
             Courses
           </router-link>
+          <router-link to="/student-applications" class="nav-item">
+            <span class="nav-icon">&#128203;</span>
+            Student Applications
+          </router-link>
+          <router-link to="/instructor-applications" class="nav-item">
+            <span class="nav-icon">&#9997;</span>
+            Instructor Applications
+          </router-link>
           <router-link to="/students" class="nav-item">
             <span class="nav-icon">&#9998;</span>
             Students

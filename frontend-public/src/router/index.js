@@ -5,6 +5,7 @@ import Courses from '../views/Courses.vue'
 import Sponsors from '../views/Sponsors.vue'
 import Apply from '../views/Apply.vue'
 import TrackApplication from '../views/TrackApplication.vue'
+import TeachWithUs from '../views/TeachWithUs.vue'
 
 const routes = [
   {
@@ -36,6 +37,11 @@ const routes = [
     path: '/apply/:courseSlug',
     name: 'ApplyWithCourse',
     component: Apply,
+  },
+  {
+    path: '/teach',
+    name: 'TeachWithUs',
+    component: TeachWithUs,
   },
   {
     path: '/:slug',

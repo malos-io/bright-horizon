@@ -13,6 +13,7 @@ from reusable_components.email_notification_helper import send_email
 from email_templates.document_rejected import get_document_rejected_email_html
 from email_templates.in_waitlist import get_in_waitlist_email_html
 from email_templates.application_submitted import get_application_submitted_email_html
+from email_templates.admin_new_application import get_admin_new_application_email_html
 from email_templates.interview_schedule import get_interview_schedule_email_html
 from email_templates.enrollment_completed import get_enrollment_completed_email_html
 
@@ -218,6 +219,25 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
             _log_email_sent(doc_ref[1], "application_submitted", subject)
         except Exception as email_err:
             logger.warning("Failed to send submission confirmation email to %s: %s", application.email, email_err)
+
+        # Notify admissions team
+        try:
+            admin_subject = f"New Application: {application.firstName} {application.lastName} - {application.course}"
+            admin_html = get_admin_new_application_email_html(
+                applicant_name=f"{application.firstName} {application.lastName}",
+                email=application.email,
+                contact_no=application.contactNo,
+                course=application.course,
+                enrollment_id=doc_id,
+            )
+            await send_email(
+                to="admissions@brighthii.com",
+                subject=admin_subject,
+                html_content=admin_html,
+                from_email=NOTIFICATION_FROM,
+            )
+        except Exception as email_err:
+            logger.warning("Failed to send admin notification email: %s", email_err)
 
         return {"message": "Application submitted successfully", "id": doc_id}
     except Exception as e:

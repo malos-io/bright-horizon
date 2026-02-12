@@ -250,4 +250,26 @@ export const reorderSponsors = async (orderList) => {
   return response.data
 }
 
+// ── Instructor Applications ──
+
+export const getInstructorApplications = async () => {
+  const response = await api.get('/instructor-applications')
+  return response.data
+}
+
+export const getInstructorApplication = async (id) => {
+  const response = await api.get(`/instructor-applications/${id}`)
+  return response.data
+}
+
+export const updateInstructorApplication = async (id, fields) => {
+  const response = await api.patch(`/instructor-applications/${id}`, fields)
+  return response.data
+}
+
+export const deleteInstructorApplication = async (id) => {
+  const response = await api.delete(`/instructor-applications/${id}`)
+  return response.data
+}
+
 export default api

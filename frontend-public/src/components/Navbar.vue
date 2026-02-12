@@ -27,6 +27,7 @@
           <router-link to="/" class="nav-link">Home</router-link>
           <router-link to="/courses" class="nav-link">Courses</router-link>
           <router-link to="/sponsors" class="nav-link">Sponsors</router-link>
+          <router-link to="/teach" class="nav-link">Teach With Us</router-link>
         </div>
 
         <div class="nav-actions">
@@ -45,6 +46,7 @@
         <router-link to="/" class="nav-link" @click="mobileOpen = false">Home</router-link>
         <router-link to="/courses" class="nav-link" @click="mobileOpen = false">Courses</router-link>
         <router-link to="/sponsors" class="nav-link" @click="mobileOpen = false">Sponsors</router-link>
+        <router-link to="/teach" class="nav-link" @click="mobileOpen = false">Teach With Us</router-link>
         <div class="mobile-actions">
           <a :href="studentUrl" class="btn btn-outline" @click="mobileOpen = false">Student Portal</a>
           <router-link to="/track" class="btn btn-outline" @click="mobileOpen = false">Track Application</router-link>

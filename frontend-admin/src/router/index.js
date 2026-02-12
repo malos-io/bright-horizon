@@ -11,6 +11,9 @@ import AuthCallback from '../views/AuthCallback.vue'
 import ApplicationDetail from '../views/ApplicationDetail.vue'
 import Sponsors from '../views/Sponsors.vue'
 import SponsorScholars from '../views/SponsorScholars.vue'
+import StudentApplications from '../views/StudentApplications.vue'
+import InstructorApplications from '../views/InstructorApplications.vue'
+import InstructorApplicationDetail from '../views/InstructorApplicationDetail.vue'
 
 const routes = [
   {
@@ -41,6 +44,11 @@ const routes = [
     component: CourseDetail,
   },
   {
+    path: '/student-applications',
+    name: 'StudentApplications',
+    component: StudentApplications,
+  },
+  {
     path: '/application/:id',
     name: 'ApplicationDetail',
     component: ApplicationDetail,
@@ -64,6 +72,16 @@ const routes = [
     path: '/staff',
     name: 'Staff',
     component: Staff,
+  },
+  {
+    path: '/instructor-applications',
+    name: 'InstructorApplications',
+    component: InstructorApplications,
+  },
+  {
+    path: '/instructor-applications/:id',
+    name: 'InstructorApplicationDetail',
+    component: InstructorApplicationDetail,
   },
   {
     path: '/sponsors',
