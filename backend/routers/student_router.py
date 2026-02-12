@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, HTTPException
 from firebase_admin import firestore
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 from reusable_components.auth import verify_jwt
 from reusable_components.gcloud_storage_helper import generate_signed_url
 
@@ -16,7 +16,7 @@ router = APIRouter(prefix="/api", tags=["students"])
 def get_students(_admin: dict = Depends(verify_jwt)):
     """List all student_users with role 'student'."""
     try:
-        collection = get_collection_name("student_users")
+        collection = "student_users"
         docs = db.collection(collection).where("role", "==", "student").stream()
 
         students = []
@@ -50,7 +50,7 @@ def get_student_detail(student_id: str, _admin: dict = Depends(verify_jwt)):
     """Get student info, enrollment history, and latest documents."""
     try:
         # Get student record by document ID
-        student_collection = get_collection_name("student_users")
+        student_collection = "student_users"
         student_doc = db.collection(student_collection).document(student_id).get()
         if not student_doc.exists:
             raise HTTPException(status_code=404, detail="Student not found")
@@ -63,7 +63,7 @@ def get_student_detail(student_id: str, _admin: dict = Depends(verify_jwt)):
 
         # Get all enrollments for this student's email
         student_email = student.get("email", "")
-        enrollment_collection = get_collection_name("pending_enrollment_application")
+        enrollment_collection = "pending_enrollment_application"
         enrollment_docs = (
             db.collection(enrollment_collection)
             .where("email", "==", student_email)
@@ -134,7 +134,7 @@ def update_student_email(
         raise HTTPException(status_code=400, detail="A valid email address is required.")
 
     try:
-        student_collection = get_collection_name("student_users")
+        student_collection = "student_users"
         student_ref = db.collection(student_collection).document(student_id)
         student_doc = student_ref.get()
         if not student_doc.exists:
@@ -169,7 +169,7 @@ def update_student_email(
         })
 
         # Update all enrollment applications that used the old email
-        enrollment_collection = get_collection_name("pending_enrollment_application")
+        enrollment_collection = "pending_enrollment_application"
         enrollment_docs = list(
             db.collection(enrollment_collection)
             .where("email", "==", old_email)

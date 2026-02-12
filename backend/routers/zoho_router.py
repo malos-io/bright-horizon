@@ -4,7 +4,7 @@ import os
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from reusable_components.auth import create_jwt, refresh_jwt, verify_jwt
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 
 logger = logging.getLogger(__name__)
 
@@ -63,14 +63,14 @@ async def zoho_callback(code: str):
             raise HTTPException(status_code=400, detail="Could not retrieve user email from Zoho")
 
         # Check if this email is an authorized admin
-        staff_doc = db.collection(get_collection_name("brighthii_staffs")).document(email).get()
+        staff_doc = db.collection("brighthii_staffs").document(email).get()
         if not staff_doc.exists or staff_doc.to_dict().get("role") != "admin":
             logger.warning("Unauthorized admin login attempt: %s", email)
             from fastapi.responses import RedirectResponse
             return RedirectResponse(url=f"{ADMIN_FRONTEND_URL}/login?error=unauthorized")
 
         # Store Zoho tokens in Firestore (keyed by email)
-        collection = get_collection_name("zoho_tokens")
+        collection = "zoho_tokens"
         db.collection(collection).document(email).set({
             "access_token": access_token,
             "refresh_token": refresh_token,

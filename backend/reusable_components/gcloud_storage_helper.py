@@ -21,12 +21,19 @@ _client = None
 def _get_client():
     global _client
     if _client is None:
-        # Dev: use the same creds file as Firebase; Prod: default service account
-        creds_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "brighthii-creds.json")
-        if os.path.exists(creds_path):
-            creds = service_account.Credentials.from_service_account_file(creds_path)
-            _client = storage.Client(credentials=creds, project=creds.project_id)
+        # Check if using Firebase Storage Emulator
+        emulator_host = os.getenv("FIREBASE_STORAGE_EMULATOR_HOST")
+        if emulator_host:
+            # Dev mode: use emulator with anonymous credentials (no authentication needed)
+            from google.auth.credentials import AnonymousCredentials
+            # Point client to emulator URL instead of production GCS
+            _client = storage.Client(
+                credentials=AnonymousCredentials(),
+                project="brighthii-dev",
+                client_options={"api_endpoint": f"http://{emulator_host}"}
+            )
         else:
+            # Staging/Prod (Cloud Run): use default service account
             _client = storage.Client()
     return _client
 
@@ -81,12 +88,11 @@ def generate_signed_url(gcs_path: str, expiration_minutes: int = 60, bucket_name
     bucket = client.bucket(bucket_name or get_bucket_name())
     blob = bucket.blob(gcs_path)
 
-    # Dev: client has a private key from the creds file, sign locally
-    creds_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "brighthii-creds.json")
-    if os.path.exists(creds_path):
-        return blob.generate_signed_url(expiration=timedelta(minutes=expiration_minutes), method="GET")
+    # Emulator mode: return public URL (emulator doesn't support signed URLs)
+    if os.getenv("FIREBASE_STORAGE_EMULATOR_HOST"):
+        return blob.public_url
 
-    # Staging/Prod (Cloud Run): no private key, use IAM signBlob API
+    # Staging/Prod (Cloud Run): use IAM signBlob API (no private key needed)
     credentials, _project = google_auth_default()
     credentials.refresh(google_auth_requests.Request())
     return blob.generate_signed_url(

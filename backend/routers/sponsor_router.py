@@ -7,7 +7,7 @@ from firebase_admin import firestore
 from typing import Optional
 
 from schemas.sponsor_schema import Sponsor
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 from reusable_components.auth import verify_jwt
 from reusable_components.gcloud_storage_helper import upload_file, delete_file, generate_signed_url
 
@@ -29,7 +29,7 @@ def _get_sponsors_from_db() -> list[dict]:
         return _sponsors_cache
 
     try:
-        collection = get_collection_name("sponsors")
+        collection = "sponsors"
         docs = db.collection(collection).order_by("order").stream()
         result = []
         sponsor_ids = []
@@ -45,7 +45,7 @@ def _get_sponsors_from_db() -> list[dict]:
 
         # Compute scholars_sponsored from actual enrollments
         if sponsor_ids:
-            enrollment_col = get_collection_name("pending_enrollment_application")
+            enrollment_col = "pending_enrollment_application"
             counts: dict[str, int] = {}
             # Query enrollments that have a sponsor_id assigned
             enrolled = db.collection(enrollment_col).where("sponsor_id", "!=", "").stream()
@@ -83,7 +83,7 @@ def get_sponsor_scholars(
     _admin: dict = Depends(verify_jwt),
 ):
     """Return enrollments linked to this sponsor (admin only)."""
-    collection = get_collection_name("pending_enrollment_application")
+    collection = "pending_enrollment_application"
     docs = db.collection(collection).where("sponsor_id", "==", sponsor_id).stream()
     scholars = []
     for doc in docs:
@@ -109,7 +109,7 @@ def create_sponsor(
     image: Optional[UploadFile] = File(None),
     _admin: dict = Depends(verify_jwt),
 ):
-    collection = get_collection_name("sponsors")
+    collection = "sponsors"
 
     # Determine next order value
     existing = list(
@@ -158,7 +158,7 @@ def update_sponsor(
     image: Optional[UploadFile] = File(None),
     _admin: dict = Depends(verify_jwt),
 ):
-    collection = get_collection_name("sponsors")
+    collection = "sponsors"
     doc_ref = db.collection(collection).document(sponsor_id)
     doc = doc_ref.get()
     if not doc.exists:
@@ -199,7 +199,7 @@ def delete_sponsor(
     sponsor_id: str,
     _admin: dict = Depends(verify_jwt),
 ):
-    collection = get_collection_name("sponsors")
+    collection = "sponsors"
     doc_ref = db.collection(collection).document(sponsor_id)
     doc = doc_ref.get()
     if not doc.exists:
@@ -226,7 +226,7 @@ def reorder_sponsors(
     if not order_list or not isinstance(order_list, list):
         raise HTTPException(status_code=400, detail="'order' must be a non-empty list of sponsor IDs")
 
-    collection = get_collection_name("sponsors")
+    collection = "sponsors"
     batch = db.batch()
     for idx, sponsor_id in enumerate(order_list):
         doc_ref = db.collection(collection).document(sponsor_id)

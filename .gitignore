@@ -1,7 +1,7 @@
 # Credentials
-*-creds.json
 *-credentials.json
 service-account*.json
+emulator-creds.json
 
 # Environment
 .env
@@ -20,3 +20,10 @@ dist/
 
 # OS
 .DS_Store
+
+# Emulator data (temporary development data)
+emulator-data/*.log
+emulator-data/firestore_export/
+emulator-data/auth_export/
+emulator-data/storage_export/
+emulator-data/ui-debug.log

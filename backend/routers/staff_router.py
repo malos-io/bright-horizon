@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from firebase_admin import firestore
 from pydantic import BaseModel
 from reusable_components.auth import verify_jwt
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,7 @@ class StaffUpdateRequest(BaseModel):
 def list_staff(_admin: dict = Depends(verify_jwt)):
     """List all staff from brighthii_staffs collection."""
     try:
-        collection = get_collection_name("brighthii_staffs")
+        collection = "brighthii_staffs"
         docs = db.collection(collection).stream()
 
         staff = []
@@ -45,7 +45,7 @@ def list_staff(_admin: dict = Depends(verify_jwt)):
 def add_staff(request: StaffRequest, _admin: dict = Depends(verify_jwt)):
     """Add a new staff member."""
     try:
-        collection = get_collection_name("brighthii_staffs")
+        collection = "brighthii_staffs"
         doc_ref = db.collection(collection).document(request.email)
 
         if doc_ref.get().exists:
@@ -69,7 +69,7 @@ def add_staff(request: StaffRequest, _admin: dict = Depends(verify_jwt)):
 def update_staff_role(email: str, request: StaffUpdateRequest, _admin: dict = Depends(verify_jwt)):
     """Update a staff member's role."""
     try:
-        collection = get_collection_name("brighthii_staffs")
+        collection = "brighthii_staffs"
         doc_ref = db.collection(collection).document(email)
 
         if not doc_ref.get().exists:
@@ -93,7 +93,7 @@ def remove_staff(email: str, payload: dict = Depends(verify_jwt)):
         if payload["sub"] == email:
             raise HTTPException(status_code=400, detail="Cannot remove yourself")
 
-        collection = get_collection_name("brighthii_staffs")
+        collection = "brighthii_staffs"
         doc_ref = db.collection(collection).document(email)
 
         if not doc_ref.get().exists:

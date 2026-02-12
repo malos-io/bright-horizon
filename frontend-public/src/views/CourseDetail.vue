@@ -72,6 +72,7 @@
               <li><span class="icon">&#127942;</span> {{ course.certification }}</li>
               <li><span class="icon">&#128101;</span> Class size: {{ course.class_size }} students</li>
               <li><span class="icon">&#128197;</span> Starts: {{ formatStartDate(course.start_dates?.[0]) }}</li>
+              <li v-if="course.enrollment_deadline"><span class="icon">&#9200;</span> Enrollment deadline: {{ formatStartDate(course.enrollment_deadline) }}</li>
               <li><span class="icon">&#128196;</span> Certificate of completion</li>
             </ul>
           </div>

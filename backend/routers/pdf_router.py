@@ -9,7 +9,7 @@ from reportlab.pdfgen import canvas
 from pypdf import PdfReader, PdfWriter
 
 from reusable_components.auth import verify_jwt
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +298,7 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
 async def export_enrollment_pdf(enrollment_id: str, _admin: dict = Depends(verify_jwt)):
     """Generate and return a TESDA MIS 03-01 PDF for an enrollment."""
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id).get()
 
         if not doc_ref.exists:

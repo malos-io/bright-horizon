@@ -4,7 +4,7 @@ import os
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from reusable_components.auth import verify_jwt
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ ZOHO_TOKEN_URL = "https://accounts.zoho.com/oauth/v2/token"
 
 async def get_zoho_tokens(email: str) -> dict:
     """Get Zoho tokens from Firestore for the given admin email."""
-    collection = get_collection_name("zoho_tokens")
+    collection = "zoho_tokens"
     doc = db.collection(collection).document(email).get()
     if not doc.exists:
         raise HTTPException(status_code=401, detail="Zoho tokens not found. Please re-login.")
@@ -44,7 +44,7 @@ async def refresh_zoho_access_token(email: str, refresh_token: str) -> str:
     new_access_token = data["access_token"]
 
     # Update Firestore with new access token
-    collection = get_collection_name("zoho_tokens")
+    collection = "zoho_tokens"
     db.collection(collection).document(email).update({"access_token": new_access_token})
 
     return new_access_token

@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Body, Depends, HTTPException
 from firebase_admin import firestore
 from schemas.course_schema import Course, CourseModule, CourseSchedule, Instructor
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 from reusable_components.auth import verify_jwt
 
 logger = logging.getLogger(__name__)
@@ -391,7 +391,7 @@ def _get_course_overrides() -> dict:
         return _overrides_cache
 
     try:
-        collection = get_collection_name("course_batches")
+        collection = "course_batches"
         docs = (
             db.collection(collection)
             .where("status", "in", ["active", "enrollment_closed"])
@@ -446,7 +446,7 @@ def _apply_overrides(course: Course, overrides: dict) -> Course:
 
 def _get_active_batch(slug: str):
     """Return the active or enrollment_closed batch doc for a course, or None."""
-    collection = get_collection_name("course_batches")
+    collection = "course_batches"
     docs = list(
         db.collection(collection)
         .where("course_slug", "==", slug)
@@ -497,7 +497,7 @@ def get_courses_summary(_admin: dict = Depends(verify_jwt)):
     merged_courses = [_apply_overrides(c, overrides) for c in COURSES]
 
     # Get all batches to compute counts per course
-    batch_collection = get_collection_name("course_batches")
+    batch_collection = "course_batches"
     all_batches = list(db.collection(batch_collection).stream())
 
     # Build per-slug stats from batches
@@ -516,7 +516,7 @@ def get_courses_summary(_admin: dict = Depends(verify_jwt)):
             batch_stats[bslug]["active_status"] = bdata["status"]
 
     # Count completed students per course from enrollments
-    enrollment_collection = get_collection_name("pending_enrollment_application")
+    enrollment_collection = "pending_enrollment_application"
 
     results = []
     for course in merged_courses:
@@ -590,7 +590,7 @@ def create_batch(slug: str, body: dict = Body(...), admin: dict = Depends(verify
         "created_by": admin.get("sub", "unknown"),
     }
 
-    collection = get_collection_name("course_batches")
+    collection = "course_batches"
     _, doc_ref = db.collection(collection).add(batch_data)
 
     _invalidate_overrides_cache()
@@ -603,7 +603,7 @@ def edit_batch(slug: str, batch_id: str, body: dict = Body(...), _admin: dict = 
     if slug not in _COURSES_BY_SLUG:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    collection = get_collection_name("course_batches")
+    collection = "course_batches"
     doc_ref = db.collection(collection).document(batch_id)
     doc = doc_ref.get()
 
@@ -644,7 +644,7 @@ def close_batch_enrollment(slug: str, batch_id: str, admin: dict = Depends(verif
     if slug not in _COURSES_BY_SLUG:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    collection = get_collection_name("course_batches")
+    collection = "course_batches"
     doc_ref = db.collection(collection).document(batch_id)
     doc = doc_ref.get()
 
@@ -666,7 +666,7 @@ def close_batch_enrollment(slug: str, batch_id: str, admin: dict = Depends(verif
 
     # Move physical_docs_required enrollments back to in_waitlist
     course_title = _COURSES_BY_SLUG[slug].title
-    enrollment_collection = get_collection_name("pending_enrollment_application")
+    enrollment_collection = "pending_enrollment_application"
     affected_docs = (
         db.collection(enrollment_collection)
         .where("course", "==", course_title)
@@ -708,7 +708,7 @@ def close_batch(slug: str, batch_id: str, _admin: dict = Depends(verify_jwt)):
     if slug not in _COURSES_BY_SLUG:
         raise HTTPException(status_code=404, detail="Course not found")
 
-    collection = get_collection_name("course_batches")
+    collection = "course_batches"
     doc_ref = db.collection(collection).document(batch_id)
     doc = doc_ref.get()
 
@@ -745,7 +745,7 @@ def get_course_batches(slug: str, _admin: dict = Depends(verify_jwt)):
     merged_course = _apply_overrides(course, overrides)
 
     # Get all batches for this course
-    batch_collection = get_collection_name("course_batches")
+    batch_collection = "course_batches"
     batch_docs = list(
         db.collection(batch_collection)
         .where("course_slug", "==", slug)
@@ -753,7 +753,7 @@ def get_course_batches(slug: str, _admin: dict = Depends(verify_jwt)):
     )
 
     # Get completed enrollments for this course
-    enrollment_collection = get_collection_name("pending_enrollment_application")
+    enrollment_collection = "pending_enrollment_application"
     enrollment_docs = list(
         db.collection(enrollment_collection)
         .where("course", "==", merged_course.title)

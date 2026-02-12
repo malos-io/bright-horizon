@@ -6,7 +6,7 @@ from firebase_admin import firestore
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from schemas.enrollment_schema import EnrollmentApplication
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 from reusable_components.auth import verify_jwt, verify_applicant_jwt
 from reusable_components.gcloud_storage_helper import upload_file, delete_file, get_applicant_folder, generate_signed_url
 from reusable_components.email_notification_helper import send_email
@@ -157,7 +157,7 @@ def _sign_document_urls(documents: dict) -> dict:
 @router.get("/enrollments")
 def get_enrollments(_admin: dict = Depends(verify_jwt)):
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         docs = db.collection(collection).order_by(
             "created_at", direction=firestore.Query.DESCENDING
         ).stream()
@@ -180,7 +180,7 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
 @limiter.limit("5/minute")
 async def submit_enrollment(request: Request, application: EnrollmentApplication):
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_data = application.model_dump()
         doc_data["status"] = "pending_upload"
         doc_data["created_at"] = firestore.SERVER_TIMESTAMP
@@ -189,7 +189,7 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
         doc_id = doc_ref[1].id
 
         # Create student_users record with 'applicant' role (auto-generated ID)
-        student_collection = get_collection_name("student_users")
+        student_collection = "student_users"
         existing = list(
             db.collection(student_collection)
             .where("email", "==", application.email)
@@ -228,7 +228,7 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
 @router.get("/enrollments/{enrollment_id}")
 def get_enrollment(enrollment_id: str, _admin: dict = Depends(verify_jwt)):
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc = db.collection(collection).document(enrollment_id).get()
 
         if not doc.exists:
@@ -267,7 +267,7 @@ def update_enrollment(
     admin: dict = Depends(verify_jwt),
 ):
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
 
@@ -333,7 +333,7 @@ async def send_interview_schedule(
     from routers.course_router import get_courses
 
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
 
@@ -427,7 +427,7 @@ async def complete_enrollment(
     from routers.course_router import get_courses, _get_active_batch, _COURSES_BY_SLUG
 
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
 
@@ -491,7 +491,7 @@ async def complete_enrollment(
         })
 
         # Promote student_users role from 'applicant' to 'student'
-        student_collection = get_collection_name("student_users")
+        student_collection = "student_users"
         if applicant_email:
             existing_students = list(
                 db.collection(student_collection)
@@ -559,7 +559,7 @@ async def complete_enrollment(
 @router.get("/enrollments/{enrollment_id}/documents")
 def get_documents(enrollment_id: str, _admin: dict = Depends(verify_jwt)):
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc = db.collection(collection).document(enrollment_id).get()
         if not doc.exists:
             raise HTTPException(status_code=404, detail="Enrollment not found")
@@ -590,7 +590,7 @@ def upload_document(
         raise HTTPException(status_code=400, detail="Invalid source. Must be 'applicant' or 'official'")
 
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
         if not doc.exists:
@@ -670,7 +670,7 @@ def delete_document(
         raise HTTPException(status_code=400, detail="Invalid source. Must be 'applicant' or 'official'")
 
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
         if not doc.exists:
@@ -735,7 +735,7 @@ async def review_document(
         raise HTTPException(status_code=400, detail="Reject reason is required")
 
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
         if not doc.exists:
@@ -829,7 +829,7 @@ def _verify_enrollment_ownership(enrollment_id: str, applicant: dict):
     if enrollment_id not in applicant.get("enrollment_ids", []):
         raise HTTPException(status_code=403, detail="Access denied")
 
-    collection = get_collection_name("pending_enrollment_application")
+    collection = "pending_enrollment_application"
     doc_ref = db.collection(collection).document(enrollment_id)
     doc = doc_ref.get()
     if not doc.exists:
@@ -1008,7 +1008,7 @@ def get_my_classes(applicant: dict = Depends(verify_applicant_jwt)):
 
     email = applicant.get("sub", "").lower()
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         docs = (
             db.collection(collection)
             .where("email", "==", email)
@@ -1029,7 +1029,7 @@ def get_my_classes(applicant: dict = Depends(verify_applicant_jwt)):
             # Fetch batch details if available
             batch = None
             if batch_id:
-                batch_collection = get_collection_name("course_batches")
+                batch_collection = "course_batches"
                 batch_doc = db.collection(batch_collection).document(batch_id).get()
                 if batch_doc.exists:
                     batch = batch_doc.to_dict()
@@ -1069,7 +1069,7 @@ def archive_enrollment(
 ):
     """Archive an enrollment application (soft-delete)."""
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
 
@@ -1111,7 +1111,7 @@ def unarchive_enrollment(
 ):
     """Restore an archived enrollment to its previous status."""
     try:
-        collection = get_collection_name("pending_enrollment_application")
+        collection = "pending_enrollment_application"
         doc_ref = db.collection(collection).document(enrollment_id)
         doc = doc_ref.get()
 

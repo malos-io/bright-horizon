@@ -110,6 +110,11 @@ def get_interview_schedule_email_html(
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 25px;">
                                 <tr>
                                     <td style="padding:6px 0; color:#334155; font-size:14px; line-height:1.6;">
+                                        &#9745; <strong>Brown Envelope</strong> (to organize your documents)
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:6px 0; color:#334155; font-size:14px; line-height:1.6;">
                                         &#9745; Original <strong>Birth Certificate</strong> (PSA/NSO)
                                     </td>
                                 </tr>

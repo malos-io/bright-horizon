@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from reusable_components.email_notification_helper import send_email
 from reusable_components.auth import create_applicant_jwt
-from reusable_components.firebase import db, get_collection_name
+from reusable_components.firebase import db
 from email_templates.otp_verification import get_otp_email_html
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ async def send_otp(request: OtpSendRequest):
     email = request.email.lower().strip()
 
     # Check if an enrollment exists for this email
-    collection = get_collection_name("pending_enrollment_application")
+    collection = "pending_enrollment_application"
     docs = db.collection(collection).where("email", "==", email).limit(1).stream()
     enrollment = None
     for doc in docs:
@@ -48,7 +48,7 @@ async def send_otp(request: OtpSendRequest):
         raise HTTPException(status_code=404, detail="No application found for this email address.")
 
     # Rate limit: check if OTP was sent recently (within 60 seconds)
-    otp_collection = get_collection_name("otp_codes")
+    otp_collection = "otp_codes"
     existing_doc = db.collection(otp_collection).document(email).get()
     if existing_doc.exists:
         existing_data = existing_doc.to_dict()
@@ -89,7 +89,7 @@ async def verify_otp(request: OtpVerifyRequest):
     code = request.code.strip()
 
     # Lookup OTP
-    otp_collection = get_collection_name("otp_codes")
+    otp_collection = "otp_codes"
     otp_doc = db.collection(otp_collection).document(email).get()
 
     if not otp_doc.exists:
@@ -122,7 +122,7 @@ async def verify_otp(request: OtpVerifyRequest):
     db.collection(otp_collection).document(email).delete()
 
     # Look up the user's role from student_users (if exists)
-    student_collection = get_collection_name("student_users")
+    student_collection = "student_users"
     student_docs = list(db.collection(student_collection).where("email", "==", email).limit(1).stream())
     role = student_docs[0].to_dict().get("role", "applicant") if student_docs else "applicant"
 
@@ -131,7 +131,7 @@ async def verify_otp(request: OtpVerifyRequest):
     courses = get_courses()
     course_map = {c.title: c for c in courses}
 
-    enrollment_collection = get_collection_name("pending_enrollment_application")
+    enrollment_collection = "pending_enrollment_application"
     docs = db.collection(enrollment_collection).where("email", "==", email).stream()
 
     applications = []

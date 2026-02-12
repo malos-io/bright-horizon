@@ -105,6 +105,7 @@
               <div class="action-banner-checklist">
                 <span>Bring the following:</span>
                 <ul>
+                  <li>Brown Envelope (to organize your documents)</li>
                   <li>Birth Certificate (PSA/NSO)</li>
                   <li>Educational Credentials (TOR / Diploma / Form 137)</li>
                   <li>Valid Government-Issued ID</li>
@@ -176,7 +177,7 @@
               <span class="status-badge" :class="'status-' + selectedEnrollment.status">{{ formatStatus(selectedEnrollment.status) }}</span>
             </div>
 
-            <div v-if="selectedEnrollment.status === 'physical_docs_required'" class="status-note status-note-info">Please visit <strong>Bright Horizon Institute</strong> in person to submit the <strong>original copies</strong> of your documents for verification and undergo a brief interview with our admissions team. Please bring: Birth Certificate (PSA/NSO), Educational Credentials, Government-Issued ID, and ID Photos (1x1 &amp; 2x2, white background).</div>
+            <div v-if="selectedEnrollment.status === 'physical_docs_required'" class="status-note status-note-info">Please visit <strong>Bright Horizon Institute</strong> in person to submit the <strong>original copies</strong> of your documents for verification and undergo a brief interview with our admissions team. Please bring: Brown Envelope, Birth Certificate (PSA/NSO), Educational Credentials, Government-Issued ID, and ID Photos (1x1 &amp; 2x2, white background).</div>
             <div v-else-if="selectedEnrollment.status === 'in_waitlist'" class="status-note status-note-success">All submitted documents have been reviewed and accepted. Your application is now on the waitlist. Please wait for further instructions from our admissions team.</div>
             <div v-else-if="selectedEnrollment.status === 'documents_rejected'" class="status-note status-note-warning">One or more documents need attention. Please check the Documents section below to review the feedback and re-upload as needed.</div>
 

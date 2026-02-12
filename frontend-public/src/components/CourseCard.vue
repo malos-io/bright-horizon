@@ -32,6 +32,10 @@
           <span class="meta-icon">&#128197;</span>
           <span>Starts: {{ formatStartDate(course.start_dates) }}</span>
         </div>
+        <div v-if="course.enrollment_deadline" class="meta-item">
+          <span class="meta-icon">&#9200;</span>
+          <span>Deadline: {{ formatDeadline(course.enrollment_deadline) }}</span>
+        </div>
       </div>
 
       <div class="course-stats">
@@ -74,6 +78,13 @@ const formatNumber = (num) => {
 
 const formatStartDate = (startDates) => {
   const val = (startDates && startDates.length) ? startDates[0] : ''
+  if (!val || val === 'TBA') return 'TBA'
+  const d = new Date(val + 'T00:00:00')
+  if (isNaN(d)) return val
+  return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+const formatDeadline = (val) => {
   if (!val || val === 'TBA') return 'TBA'
   const d = new Date(val + 'T00:00:00')
   if (isNaN(d)) return val
