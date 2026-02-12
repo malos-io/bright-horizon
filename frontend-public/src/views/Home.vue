@@ -14,12 +14,12 @@
         </div>
         <div class="hero-stats">
           <div class="stat">
-            <span class="stat-number">5,000+</span>
-            <span class="stat-label">Graduates</span>
+            <span class="stat-number">2</span>
+            <span class="stat-label">Active Courses</span>
           </div>
           <div class="stat">
-            <span class="stat-number">15+</span>
-            <span class="stat-label">Courses</span>
+            <span class="stat-number">2</span>
+            <span class="stat-label">Coming Soon</span>
           </div>
           <div class="stat">
             <span class="stat-number">4.8</span>
