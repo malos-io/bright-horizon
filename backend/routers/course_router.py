@@ -36,7 +36,7 @@ You will learn effective workplace practices and job-related fundamentals includ
 This TESDA-accredited program prepares you for careers in accounting departments, small businesses, and financial institutions.""",
         image="/images/courses/bookkeeping.png",
         duration_weeks=6,
-        total_hours=240,
+        total_hours=292,
         price=0,
         discounted_price=None,
         category="Business & Finance",
@@ -51,32 +51,32 @@ This TESDA-accredited program prepares you for careers in accounting departments
             CourseModule(
                 title="Introduction to Bookkeeping",
                 description="Essential skills and competencies for bookkeeping roles, effective workplace practices and fundamentals",
-                duration_hours=24
+                duration_hours=32
             ),
             CourseModule(
                 title="Journalizing Transactions",
                 description="Logging and recording business transactions in an accounting journal, best practices and procedures",
-                duration_hours=48
+                duration_hours=58
             ),
             CourseModule(
                 title="Posting Transactions",
                 description="Posting transactions manually and digitally, foundational knowledge on format and procedures",
-                duration_hours=48
+                duration_hours=58
             ),
             CourseModule(
                 title="Preparing Trial Balance",
                 description="Listing accounts, transferring and summarizing trial balances from a ledger, key considerations",
-                duration_hours=40
+                duration_hours=48
             ),
             CourseModule(
                 title="Preparing Financial Reports",
                 description="Preparing financial reports manually, guidance on report preparation procedures",
-                duration_hours=48
+                duration_hours=58
             ),
             CourseModule(
                 title="Reviewing Internal Control System",
                 description="Reviewing and determining extent of compliance with a firm's internal control manual, effectiveness assessment",
-                duration_hours=32
+                duration_hours=38
             ),
         ],
         requirements=[
@@ -118,7 +118,7 @@ You will develop competencies in event planning including developing event propo
 
 This TESDA-accredited qualification prepares you for careers in the tourism and hospitality sector as an events coordinator or manager.""",
         image="/images/courses/events-management.png",
-        duration_weeks=3,
+        duration_weeks=2,
         total_hours=108,
         price=0,
         discounted_price=None,
@@ -201,8 +201,8 @@ You will learn professional cleaning techniques, room preparation, guest service
 
 This TESDA-accredited program equips you with the skills needed to work as a professional housekeeper in various hospitality settings.""",
         image="/images/courses/housekeeping.png",
-        duration_weeks=4,
-        total_hours=148,
+        duration_weeks=9,
+        total_hours=436,
         price=0,
         discounted_price=None,
         category="Tourism & Hospitality",
@@ -217,37 +217,37 @@ This TESDA-accredited program equips you with the skills needed to work as a pro
             CourseModule(
                 title="Participate in Workplace Communication",
                 description="Develop effective communication skills in housekeeping settings",
-                duration_hours=20
+                duration_hours=60
             ),
             CourseModule(
                 title="Work in a Team Environment",
                 description="Learn to work effectively with colleagues and supervisors",
-                duration_hours=16
+                duration_hours=56
             ),
             CourseModule(
                 title="Practice Career Professionalism",
                 description="Develop professional attitudes and workplace ethics",
-                duration_hours=16
+                duration_hours=56
             ),
             CourseModule(
                 title="Practice Occupational Health and Safety Procedures",
                 description="Learn workplace safety protocols and emergency procedures",
-                duration_hours=16
+                duration_hours=56
             ),
             CourseModule(
                 title="Clean and Prepare Rooms for Guests",
                 description="Master techniques for cleaning and preparing guest rooms to standards",
-                duration_hours=32
+                duration_hours=72
             ),
             CourseModule(
                 title="Provide Housekeeping Services to Guests",
                 description="Learn guest service protocols and responding to guest requests",
-                duration_hours=24
+                duration_hours=64
             ),
             CourseModule(
                 title="Provide Valet/Butler Service",
                 description="Develop skills in providing personalized guest services",
-                duration_hours=24
+                duration_hours=72
             ),
         ],
         requirements=[
@@ -290,8 +290,8 @@ You will learn the fundamentals of hilot, traditional massage strokes, body asse
 
 This TESDA-accredited program prepares you for careers in wellness centers, spas, resorts, and health facilities as a certified hilot practitioner.""",
         image="/images/courses/hilot.png",
-        duration_weeks=3,
-        total_hours=124,
+        duration_weeks=2,
+        total_hours=120,
         price=0,
         discounted_price=None,
         category="Health & Wellness",
@@ -316,12 +316,12 @@ This TESDA-accredited program prepares you for careers in wellness centers, spas
             CourseModule(
                 title="Practice Career Professionalism",
                 description="Develop professional ethics and workplace standards",
-                duration_hours=12
+                duration_hours=10
             ),
             CourseModule(
                 title="Practice Occupational Health and Safety Procedures",
                 description="Learn safety protocols and hygiene standards for wellness massage",
-                duration_hours=16
+                duration_hours=14
             ),
             CourseModule(
                 title="Perform Hilot/Wellness Massage",

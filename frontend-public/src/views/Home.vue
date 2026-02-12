@@ -28,7 +28,7 @@
         </div>
       </div>
       <div class="hero-image">
-        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=500&fit=crop" alt="Students learning" />
+        <img src="/images/landing_page.png" alt="Students learning" />
       </div>
     </section>
 
