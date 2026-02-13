@@ -38,7 +38,7 @@ steps:
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
-      - '--set-env-vars=ENVIRONMENT=production,ZOHO_REDIRECT_URI=https://api.brighthii.com/api/zoho/callback,ADMIN_FRONTEND_URL=https://portal.brighthii.com,PUBLIC_API_URL=https://api.brighthii.com,GCS_BUCKET=brighthii_prod'
+      - '--set-env-vars=ENVIRONMENT=prod,ZOHO_REDIRECT_URI=https://api.brighthii.com/api/zoho/callback,ADMIN_FRONTEND_URL=https://portal.brighthii.com,PUBLIC_API_URL=https://api.brighthii.com,GCS_BUCKET=brighthii_prod'
       - '--set-secrets=ZOHO_CLIENT_ID=zoho_oauth_client_id:latest,ZOHO_CLIENT_SECRET=zoho_oauth_client_secret:latest,JWT_SECRET_KEY=zoho_oauth_jwt_secret:latest,ZOHO_MAIL_SELF_CLIENT_ID=zoho_self_client_id:latest,ZOHO_MAIL_SELF_SECRET_ID=zoho_self_client_secret:latest,ZOHO_MAIL_REFRESH_TOKEN=zoho_self_client_refresh_token:latest'
       - '--service-account=backend-runtime@brighthii.iam.gserviceaccount.com'
     id: 'deploy-backend'
