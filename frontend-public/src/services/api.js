@@ -112,4 +112,13 @@ export const uploadApplicantDocument = async (enrollmentId, docType, file) => {
   return response.data
 }
 
+export const withdrawApplicantEnrollment = async (enrollmentId, reason, comments = '') => {
+  const response = await api.post(
+    `/applicant/enrollments/${enrollmentId}/withdraw`,
+    { reason, comments },
+    { headers: authHeaders() }
+  )
+  return response.data
+}
+
 export default api

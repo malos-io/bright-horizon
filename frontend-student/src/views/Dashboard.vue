@@ -58,7 +58,7 @@ const auth = useAuth()
 
 const applications = computed(() => auth.state.applications || [])
 const pendingCount = computed(() =>
-  applications.value.filter(a => a.status !== 'completed').length
+  applications.value.filter(a => !['completed', 'withdrawn', 'cancelled', 'archived'].includes(a.status)).length
 )
 const completedCount = computed(() =>
   applications.value.filter(a => a.status === 'completed').length
@@ -84,6 +84,8 @@ function formatStatus(status) {
     in_waitlist: 'In Waitlist',
     physical_docs_required: 'Interview Required',
     completed: 'Enrolled',
+    withdrawn: 'Withdrawn',
+    cancelled: 'Cancelled',
   }
   return map[status] || status
 }
@@ -219,6 +221,8 @@ function formatStatus(status) {
 .status-in_waitlist { background: #d4edda; color: #155724; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
+.status-withdrawn { background: #fef2f2; color: #991b1b; }
+.status-cancelled { background: #fefce8; color: #92400e; }
 
 .empty-state {
   text-align: center;

@@ -82,6 +82,13 @@ export const getMyClasses = async () => {
   return response.data
 }
 
+// ── Withdraw ──
+
+export const withdrawEnrollment = async (enrollmentId, reason, comments = '') => {
+  const response = await api.post(`/applicant/enrollments/${enrollmentId}/withdraw`, { reason, comments })
+  return response.data
+}
+
 // ── Courses (public) ──
 
 export const getCourses = async () => {

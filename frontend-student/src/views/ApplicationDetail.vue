@@ -13,9 +13,12 @@
           <p class="summary-name">{{ fullName }}</p>
           <p class="summary-date">Applied {{ formatDate(enrollment.created_at) }}</p>
         </div>
-        <span class="status-badge" :class="'status-' + enrollment.status">
-          {{ formatStatus(enrollment.status) }}
-        </span>
+        <div class="summary-right">
+          <span class="status-badge" :class="'status-' + enrollment.status">
+            {{ formatStatus(enrollment.status) }}
+          </span>
+          <button v-if="canWithdraw" class="btn-withdraw-sm" @click="openWithdrawModal">Withdraw</button>
+        </div>
       </div>
 
       <!-- Progress Steps -->
@@ -157,13 +160,53 @@
         </div>
       </div>
     </template>
+
+    <!-- Withdraw Modal -->
+    <div v-if="withdrawModal.show" class="modal-overlay" @click.self="withdrawModal.show = false">
+      <div class="modal-card">
+        <h3>Withdraw Application</h3>
+        <p class="modal-subtitle">Are you sure you want to withdraw this application? This action cannot be undone.</p>
+
+        <div class="modal-field">
+          <label class="modal-label">Reason for withdrawal <span class="required-star">*</span></label>
+          <div class="radio-list">
+            <label v-for="r in withdrawReasons" :key="r" class="radio-option">
+              <input type="radio" v-model="withdrawModal.reason" :value="r" />
+              <span>{{ r }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">
+            Additional comments
+            <span v-if="withdrawCommentsRequired" class="required-star">*</span>
+          </label>
+          <textarea
+            v-model="withdrawModal.comments"
+            rows="3"
+            class="modal-textarea"
+            placeholder="Please provide any additional details..."
+          ></textarea>
+        </div>
+
+        <p v-if="withdrawModal.error" class="modal-error">{{ withdrawModal.error }}</p>
+
+        <div class="modal-actions">
+          <button class="modal-btn-cancel" @click="withdrawModal.show = false" :disabled="withdrawModal.submitting">Cancel</button>
+          <button class="modal-btn-danger" @click="submitWithdraw" :disabled="withdrawModal.submitting || !withdrawModal.reason">
+            {{ withdrawModal.submitting ? 'Withdrawing...' : 'Withdraw Application' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, getDocuments, uploadDocument } from '../services/api'
+import { getEnrollment, getDocuments, uploadDocument, withdrawEnrollment } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -176,6 +219,58 @@ const documents = ref({})
 const uploading = ref(null)
 
 const enrollmentId = route.params.id
+
+// Withdraw modal state
+const withdrawModal = ref({
+  show: false,
+  reason: '',
+  comments: '',
+  submitting: false,
+  error: '',
+})
+
+const withdrawReasons = [
+  'Schedule conflict',
+  'Financial reasons',
+  'Found another program',
+  'Personal/family reasons',
+  'Changed career plans',
+  'Other',
+]
+
+const canWithdraw = computed(() => {
+  const withdrawable = ['pending', 'pending_upload', 'pending_review', 'documents_rejected', 'in_waitlist', 'physical_docs_required']
+  return withdrawable.includes(enrollment.value.status)
+})
+
+const withdrawCommentsRequired = computed(() => withdrawModal.value.reason === 'Other')
+
+const openWithdrawModal = () => {
+  withdrawModal.value = { show: true, reason: '', comments: '', submitting: false, error: '' }
+}
+
+const submitWithdraw = async () => {
+  const modal = withdrawModal.value
+  if (!modal.reason) {
+    modal.error = 'Please select a reason.'
+    return
+  }
+  if (modal.reason === 'Other' && !modal.comments.trim()) {
+    modal.error = 'Please provide details for your reason.'
+    return
+  }
+  modal.submitting = true
+  modal.error = ''
+  try {
+    await withdrawEnrollment(enrollmentId, modal.reason, modal.comments)
+    enrollment.value.status = 'withdrawn'
+    modal.show = false
+  } catch (e) {
+    modal.error = e.response?.data?.detail || 'Failed to withdraw application.'
+  } finally {
+    modal.submitting = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -273,6 +368,18 @@ const actionBanner = computed(() => {
       title: 'Enrollment Complete!',
       message: 'Congratulations! You are now enrolled. Check your email for further instructions.',
     },
+    withdrawn: {
+      type: 'withdrawn',
+      icon: '\u{1F6AB}',
+      title: 'Application Withdrawn',
+      message: 'You have withdrawn this application. You may submit a new application at any time.',
+    },
+    cancelled: {
+      type: 'cancelled',
+      icon: '\u{26D4}',
+      title: 'Application Cancelled',
+      message: 'This application has been cancelled by the admissions team. You may submit a new application if you wish.',
+    },
   }
   return banners[status] || null
 })
@@ -335,6 +442,8 @@ function formatStatus(status) {
     in_waitlist: 'In Waitlist',
     physical_docs_required: 'Interview Required',
     completed: 'Enrolled',
+    withdrawn: 'Withdrawn',
+    cancelled: 'Cancelled',
   }
   return map[status] || status
 }
@@ -662,6 +771,172 @@ function formatStatus(status) {
 .status-in_waitlist { background: #d4edda; color: #155724; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
+.status-withdrawn { background: #fef2f2; color: #991b1b; }
+.status-cancelled { background: #fefce8; color: #92400e; }
+
+.summary-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-withdraw-sm {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #dc2626;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-withdraw-sm:hover {
+  background: rgba(254, 226, 226, 0.3);
+}
+
+.banner-withdrawn { background: #fef2f2; color: #991b1b; }
+.banner-cancelled { background: #fefce8; color: #92400e; }
+
+/* ── Withdraw Modal ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-card h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 6px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 18px;
+  line-height: 1.5;
+}
+
+.modal-field {
+  margin-bottom: 14px;
+}
+
+.modal-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.required-star {
+  color: #dc2626;
+}
+
+.radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+.radio-option:hover {
+  background: #f8fafc;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: #1a5fa4;
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.modal-textarea:focus {
+  outline: none;
+  border-color: #1a5fa4;
+}
+
+.modal-error {
+  color: #dc2626;
+  font-size: 12px;
+  margin: 0 0 10px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.modal-btn-cancel {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modal-btn-cancel:hover:not(:disabled) { background: #e0e0e0; }
+.modal-btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.modal-btn-danger {
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+  background: #dc2626;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.modal-btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.modal-btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (max-width: 600px) {
   .summary-card {
