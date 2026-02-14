@@ -370,6 +370,14 @@
           </div>
         </div>
 
+        <!-- Submit Error (non-duplicate) -->
+        <div v-if="submitError && !showDuplicateModal" class="submit-error-banner">
+          <div class="submit-error-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <p>{{ submitError }}</p>
+          </div>
+        </div>
+
         <!-- Submit -->
         <div class="form-actions">
           <button type="submit" class="btn-submit" :disabled="submitting">
@@ -377,6 +385,22 @@
           </button>
         </div>
       </form>
+
+      <!-- Duplicate Application Modal -->
+      <div v-if="showDuplicateModal" class="success-overlay">
+        <div class="duplicate-card">
+          <div class="duplicate-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <h2>Active Application Found</h2>
+          <p>We found an existing application for <strong>{{ form.course }}</strong> using this email address. Only one active application per course is allowed.</p>
+          <p class="duplicate-hint">Would you like to track your existing application instead?</p>
+          <div class="duplicate-actions">
+            <router-link to="/track" class="btn-track">Track My Application</router-link>
+            <button class="btn-dismiss" @click="showDuplicateModal = false">Go Back to Form</button>
+          </div>
+        </div>
+      </div>
 
       <!-- Success message -->
       <div v-if="submitted" class="success-overlay">
@@ -419,6 +443,9 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getCourses, submitEnrollment } from '../services/api'
 import { useAddressDropdown } from '../composables/useAddressDropdown'
+
+const submitError = ref('')
+const showDuplicateModal = ref(false)
 
 const route = useRoute()
 const courses = ref([])
@@ -553,13 +580,19 @@ onMounted(async () => {
 async function handleSubmit() {
   if (submitting.value) return
   submitting.value = true
+  submitError.value = ''
+  showDuplicateModal.value = false
   try {
     const result = await submitEnrollment({ ...form, age: computedAge.value })
     applicationId.value = result.id || ''
     submitted.value = true
   } catch (e) {
     console.error('Submission failed:', e)
-    alert('Failed to submit application. Please try again.')
+    if (e.response?.status === 409) {
+      showDuplicateModal.value = true
+    } else {
+      submitError.value = 'Failed to submit application. Please try again.'
+    }
   } finally {
     submitting.value = false
   }
@@ -1029,6 +1062,95 @@ async function handleSubmit() {
 .education-option input[type="radio"]:checked + .education-label {
   color: #1a5fa4;
   font-weight: 600;
+}
+
+.submit-error-banner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.submit-error-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #991b1b;
+}
+
+.submit-error-content svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.submit-error-content p {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.duplicate-card {
+  background: white;
+  border-radius: 20px;
+  padding: 3rem;
+  text-align: center;
+  max-width: 460px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.duplicate-icon {
+  width: 72px;
+  height: 72px;
+  background: #fef2f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: #dc2626;
+}
+
+.duplicate-card h2 {
+  font-size: 1.35rem;
+  color: #1a1a2e;
+  margin-bottom: 0.75rem;
+}
+
+.duplicate-card p {
+  color: #555;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-bottom: 0.5rem;
+}
+
+.duplicate-hint {
+  color: #1a5fa4 !important;
+  font-weight: 600;
+  margin-top: 0.75rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.duplicate-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-dismiss {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0.5rem;
+}
+
+.btn-dismiss:hover {
+  color: #555;
 }
 
 .form-actions {

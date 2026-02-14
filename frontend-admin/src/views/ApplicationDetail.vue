@@ -10,6 +10,9 @@
         <button v-else class="btn-archive" @click="handleArchive" :disabled="actionLoading">
           {{ actionLoading ? 'Archiving...' : 'Archive' }}
         </button>
+        <button v-if="canCancel" class="btn-cancel-app" @click="openCancelModal" :disabled="actionLoading">
+          {{ actionLoading ? 'Cancelling...' : 'Cancel Application' }}
+        </button>
         <button class="btn-export" @click="downloadPdf" :disabled="pdfLoading">
           {{ pdfLoading ? 'Exporting...' : 'Export Application to PDF' }}
         </button>
@@ -76,6 +79,35 @@
         <button class="btn-workflow" @click="handleUnarchive" :disabled="actionLoading">
           {{ actionLoading ? 'Restoring...' : 'Unarchive' }}
         </button>
+      </div>
+      <div v-else-if="statusValue === 'withdrawn'" class="workflow-banner workflow-withdrawn">
+        <div class="workflow-text">
+          <strong>This application was withdrawn by the applicant</strong>
+          <span v-if="enrollment.withdraw_reason">Reason: {{ enrollment.withdraw_reason }}<template v-if="enrollment.withdraw_comments"> &mdash; {{ enrollment.withdraw_comments }}</template></span>
+        </div>
+      </div>
+      <div v-else-if="statusValue === 'cancelled'" class="workflow-banner workflow-cancelled">
+        <div class="workflow-text">
+          <strong>This application was cancelled</strong>
+          <span v-if="enrollment.cancel_reason">Reason: {{ enrollment.cancel_reason }}</span>
+        </div>
+      </div>
+
+      <!-- Cancel Application Modal -->
+      <div v-if="cancelModal.show" class="modal-overlay" @click.self="cancelModal.show = false">
+        <div class="modal-content">
+          <h3>Cancel Application</h3>
+          <p style="color: #555; font-size: 0.9rem; margin: 0 0 1rem;">
+            Cancel the application for <strong>{{ enrollment.firstName }} {{ enrollment.lastName }}</strong>? This action cannot be undone.
+          </p>
+          <textarea v-model="cancelModal.reason" placeholder="Reason for cancellation (required)..." rows="3" class="reject-textarea"></textarea>
+          <div class="modal-actions">
+            <button class="btn-cancel" @click="cancelModal.show = false">Go Back</button>
+            <button class="btn-reject-action" @click="submitCancel" :disabled="!cancelModal.reason.trim()">
+              Confirm Cancel
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- Application Form Section -->
@@ -520,7 +552,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment, archiveEnrollment, unarchiveEnrollment, getSponsors } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment, archiveEnrollment, unarchiveEnrollment, cancelEnrollment, getSponsors } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -546,6 +578,7 @@ const uploading = ref({})
 const deleting = ref({})
 const statusValue = ref('')
 const rejectModal = reactive({ show: false, docType: '', reason: '' })
+const cancelModal = reactive({ show: false, reason: '' })
 
 const enrollmentStatuses = [
   { value: 'pending_upload', label: 'Pending Upload of Required Documents' },
@@ -555,6 +588,8 @@ const enrollmentStatuses = [
   { value: 'physical_docs_required', label: 'Physical Documents and Interview Required' },
   { value: 'completed', label: 'Completed' },
   { value: 'archived', label: 'Archived' },
+  { value: 'withdrawn', label: 'Withdrawn' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]
 
 // Statuses where the dropdown is editable (before workflow buttons take over)
@@ -564,6 +599,10 @@ const earlyStatuses = enrollmentStatuses.filter(s =>
 
 const isEarlyStatus = computed(() =>
   ['pending_upload', 'pending_review', 'documents_rejected', 'pending'].includes(statusValue.value)
+)
+
+const canCancel = computed(() =>
+  ['pending', 'pending_upload', 'pending_review', 'documents_rejected', 'in_waitlist', 'physical_docs_required'].includes(statusValue.value)
 )
 
 function formatStatusLabel(value) {
@@ -658,6 +697,7 @@ function formatEmailType(type) {
     enrollment_completed: 'Enrollment Completed',
     document_rejected: 'Document Rejected',
     documents_accepted: 'Documents Accepted',
+    application_withdrawn: 'Application Withdrawn',
   }
   return map[type] || type
 }
@@ -812,6 +852,25 @@ async function handleUnarchive() {
     await loadEnrollment()
   } catch (e) {
     const msg = e.response?.data?.detail || 'Failed to unarchive.'
+    alert(msg)
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+function openCancelModal() {
+  cancelModal.reason = ''
+  cancelModal.show = true
+}
+
+async function submitCancel() {
+  actionLoading.value = true
+  cancelModal.show = false
+  try {
+    await cancelEnrollment(route.params.id, cancelModal.reason)
+    await loadEnrollment()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to cancel application.'
     alert(msg)
   } finally {
     actionLoading.value = false
@@ -1030,6 +1089,8 @@ onMounted(async () => {
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
 .status-archived { background: #e0e0e0; color: #616161; }
+.status-withdrawn { background: #fef2f2; color: #991b1b; }
+.status-cancelled { background: #fef2f2; color: #991b1b; }
 
 .status-select {
   padding: 0.3rem 0.8rem;
@@ -1464,6 +1525,33 @@ onMounted(async () => {
   color: #616161;
   border: 1px solid #e0e0e0;
 }
+
+.workflow-withdrawn {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.workflow-cancelled {
+  background: #fefce8;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.btn-cancel-app {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+  background: #fee2e2;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-cancel-app:hover:not(:disabled) { background: #fecaca; }
+.btn-cancel-app:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .btn-archive {
   padding: 0.4rem 1rem;

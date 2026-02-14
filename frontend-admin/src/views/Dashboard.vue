@@ -21,14 +21,24 @@
 
     <div class="section">
       <div class="section-header">
-        <h2>{{ showArchived ? 'Archived Applications' : showAllEnrollments ? 'All Enrollment Applications' : 'Active Enrollment Applications' }}</h2>
+        <h2>{{ sectionTitle }}</h2>
         <div class="section-header-actions">
-          <button class="btn-refresh" @click="showAllEnrollments = !showAllEnrollments">
-            {{ showAllEnrollments ? 'Active Only' : 'See All' }}
-          </button>
-          <button v-if="archivedCount > 0" class="btn-refresh btn-archived-toggle" @click="showArchived = !showArchived">
-            {{ showArchived ? 'Hide Archived' : `Archived (${archivedCount})` }}
-          </button>
+          <button class="btn-tab" :class="{ active: filterMode === 'active' }" @click="filterMode = 'active'">Active</button>
+          <button class="btn-tab" :class="{ active: filterMode === 'all' }" @click="filterMode = 'all'">All</button>
+          <select v-model="filterMode" class="status-filter">
+            <option value="active">Active</option>
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="pending_upload">Pending Upload</option>
+            <option value="pending_review">Pending Review</option>
+            <option value="documents_rejected">Docs Rejected</option>
+            <option value="in_waitlist">In Waitlist</option>
+            <option value="physical_docs_required">Interview Required</option>
+            <option value="completed">Completed</option>
+            <option value="archived">Archived</option>
+            <option value="withdrawn">Withdrawn</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
           <button class="btn-refresh" @click="loadEnrollments">Refresh</button>
         </div>
       </div>
@@ -81,7 +91,7 @@
               </td>
             </tr>
             <tr v-if="displayedEnrollments.length === 0">
-              <td colspan="8" class="empty-state">{{ showAllEnrollments ? 'No enrollment applications yet' : 'No active enrollment applications' }}</td>
+              <td colspan="8" class="empty-state">No enrollment applications found</td>
             </tr>
           </tbody>
         </table>
@@ -130,8 +140,7 @@ const categories = ref([])
 const enrollments = ref([])
 const sendingInterview = ref(null)
 const completingEnrollment = ref(null)
-const showAllEnrollments = ref(false)
-const showArchived = ref(false)
+const filterMode = ref('active')
 
 function formatStartDate(startDates) {
   const val = (startDates && startDates.length) ? startDates[0] : ''
@@ -147,20 +156,23 @@ const pendingCount = computed(() =>
   ).length
 )
 
-const displayedEnrollments = computed(() => {
-  if (showArchived.value) {
-    return enrollments.value.filter(e => e.status === 'archived')
-  }
-  let list = enrollments.value.filter(e => e.status !== 'archived')
-  if (!showAllEnrollments.value) {
-    list = list.filter(e => e.status !== 'completed')
-  }
-  return list
+const INACTIVE_STATUSES = ['archived', 'withdrawn', 'cancelled', 'completed']
+
+const sectionTitle = computed(() => {
+  if (filterMode.value === 'active') return 'Active Enrollment Applications'
+  if (filterMode.value === 'all') return 'All Enrollment Applications'
+  return `${formatStatus(filterMode.value)} Applications`
 })
 
-const archivedCount = computed(() =>
-  enrollments.value.filter(e => e.status === 'archived').length
-)
+const displayedEnrollments = computed(() => {
+  if (filterMode.value === 'active') {
+    return enrollments.value.filter(e => !INACTIVE_STATUSES.includes(e.status))
+  }
+  if (filterMode.value === 'all') {
+    return enrollments.value
+  }
+  return enrollments.value.filter(e => e.status === filterMode.value)
+})
 
 function formatStatus(status) {
   const map = {
@@ -172,6 +184,8 @@ function formatStatus(status) {
     physical_docs_required: 'Physical Documents and Interview Required',
     completed: 'Completed',
     archived: 'Archived',
+    withdrawn: 'Withdrawn',
+    cancelled: 'Cancelled',
   }
   return map[status] || status
 }
@@ -333,13 +347,36 @@ onMounted(async () => {
   background: #d0e2fc;
 }
 
-.btn-archived-toggle {
-  color: #616161;
+.btn-tab {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #666;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-tab:hover {
   background: #e0e0e0;
 }
 
-.btn-archived-toggle:hover {
-  background: #ccc;
+.btn-tab.active {
+  color: #1a5fa4;
+  background: #e8f0fe;
+}
+
+.status-filter {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  color: #333;
+  background: white;
+  cursor: pointer;
 }
 
 .table-container {
@@ -405,6 +442,8 @@ onMounted(async () => {
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
 .status-archived { background: #e0e0e0; color: #616161; }
+.status-withdrawn { background: #fef2f2; color: #991b1b; }
+.status-cancelled { background: #fefce8; color: #92400e; }
 
 .btn-detail {
   padding: 0.3rem 0.75rem;

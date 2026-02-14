@@ -127,6 +127,20 @@
               </div>
               <p>One or more documents need attention. Please click "See Application" below to review feedback and re-upload.</p>
             </div>
+            <div v-else-if="app.status === 'withdrawn'" class="action-banner action-banner-withdrawn">
+              <div class="action-banner-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <strong>Application Withdrawn</strong>
+              </div>
+              <p>You have withdrawn this application. You may submit a new application at any time.</p>
+            </div>
+            <div v-else-if="app.status === 'cancelled'" class="action-banner action-banner-cancelled">
+              <div class="action-banner-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <strong>Application Cancelled</strong>
+              </div>
+              <p>This application has been cancelled by the admissions team. You may submit a new application if you wish.</p>
+            </div>
 
             <!-- Course Info Highlights -->
             <div v-if="app.start_date || app.enrollment_deadline || app.instructor_name" class="app-course-info">
@@ -159,7 +173,10 @@
                 <span class="detail-value">{{ app.email }}</span>
               </div>
             </div>
-            <button class="btn btn-primary btn-full btn-see-app" @click="openApplicationDetail(app)">See Application</button>
+            <div class="app-actions">
+              <button class="btn btn-primary btn-full btn-see-app" @click="openApplicationDetail(app)">See Application</button>
+              <button v-if="canWithdraw(app.status)" class="btn btn-withdraw btn-full" @click="openWithdrawModal(app)">Withdraw Application</button>
+            </div>
           </div>
 
           <router-link to="/" class="btn btn-outline btn-full" style="margin-top: 20px;">Back to Home</router-link>
@@ -350,12 +367,52 @@
 
       </div>
     </section>
+
+    <!-- Withdraw Modal -->
+    <div v-if="withdrawModal.show" class="modal-overlay" @click.self="withdrawModal.show = false">
+      <div class="modal-card">
+        <h3>Withdraw Application</h3>
+        <p class="modal-subtitle">Are you sure you want to withdraw this application? This action cannot be undone.</p>
+
+        <div class="modal-field">
+          <label class="modal-label">Reason for withdrawal <span class="required-star">*</span></label>
+          <div class="radio-list">
+            <label v-for="r in withdrawReasons" :key="r" class="radio-option">
+              <input type="radio" v-model="withdrawModal.reason" :value="r" />
+              <span>{{ r }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <label class="modal-label">
+            Additional comments
+            <span v-if="withdrawCommentsRequired" class="required-star">*</span>
+          </label>
+          <textarea
+            v-model="withdrawModal.comments"
+            rows="3"
+            class="modal-textarea"
+            placeholder="Please provide any additional details..."
+          ></textarea>
+        </div>
+
+        <p v-if="withdrawModal.error" class="modal-error">{{ withdrawModal.error }}</p>
+
+        <div class="modal-actions">
+          <button class="btn btn-outline" @click="withdrawModal.show = false" :disabled="withdrawModal.submitting">Cancel</button>
+          <button class="btn btn-danger" @click="submitWithdraw" :disabled="withdrawModal.submitting || !withdrawModal.reason">
+            {{ withdrawModal.submitting ? 'Withdrawing...' : 'Withdraw Application' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
-import { sendOtp, verifyOtp, getApplicantEnrollment, getApplicantDocuments, uploadApplicantDocument, updateApplicantEnrollment, clearApplicantToken } from '@/services/api'
+import { sendOtp, verifyOtp, getApplicantEnrollment, getApplicantDocuments, uploadApplicantDocument, updateApplicantEnrollment, withdrawApplicantEnrollment, clearApplicantToken } from '@/services/api'
 
 const step = ref('email')
 const email = ref('')
@@ -393,6 +450,27 @@ const formData = reactive({
   applyScholarship: false,
 })
 const editSnapshot = ref({})
+
+// Withdraw modal state
+const withdrawModal = reactive({
+  show: false,
+  enrollmentId: null,
+  reason: '',
+  comments: '',
+  submitting: false,
+  error: '',
+})
+
+const withdrawReasons = [
+  'Schedule conflict',
+  'Financial reasons',
+  'Found another program',
+  'Personal/family reasons',
+  'Changed career plans',
+  'Other',
+]
+
+const withdrawCommentsRequired = computed(() => withdrawModal.reason === 'Other')
 
 const canEdit = computed(() => {
   const s = selectedEnrollment.value?.status
@@ -474,6 +552,55 @@ const handleVerifyOtp = async () => {
   }
 }
 
+const canWithdraw = (status) => {
+  const withdrawable = ['pending', 'pending_upload', 'pending_review', 'documents_rejected', 'in_waitlist', 'physical_docs_required']
+  return withdrawable.includes(status)
+}
+
+const openWithdrawModal = (app) => {
+  withdrawModal.show = true
+  withdrawModal.enrollmentId = app.id
+  withdrawModal.reason = ''
+  withdrawModal.comments = ''
+  withdrawModal.error = ''
+  withdrawModal.submitting = false
+}
+
+const submitWithdraw = async () => {
+  if (!withdrawModal.reason) {
+    withdrawModal.error = 'Please select a reason.'
+    return
+  }
+  if (withdrawModal.reason === 'Other' && !withdrawModal.comments.trim()) {
+    withdrawModal.error = 'Please provide details for your reason.'
+    return
+  }
+  withdrawModal.submitting = true
+  withdrawModal.error = ''
+  try {
+    await withdrawApplicantEnrollment(withdrawModal.enrollmentId, withdrawModal.reason, withdrawModal.comments)
+    // Update local state
+    const app = applications.value.find(a => a.id === withdrawModal.enrollmentId)
+    if (app) app.status = 'withdrawn'
+    // If we're in the detail view for this enrollment, refresh it
+    if (selectedEnrollment.value?.id === withdrawModal.enrollmentId) {
+      selectedEnrollment.value.status = 'withdrawn'
+    }
+    withdrawModal.show = false
+  } catch (e) {
+    if (e.response?.status === 401) {
+      clearApplicantToken()
+      step.value = 'email'
+      error.value = 'Session expired. Please verify your email again.'
+      withdrawModal.show = false
+    } else {
+      withdrawModal.error = e.response?.data?.detail || 'Failed to withdraw application.'
+    }
+  } finally {
+    withdrawModal.submitting = false
+  }
+}
+
 const formatStatus = (status) => {
   const map = {
     pending: 'Pending',
@@ -487,6 +614,8 @@ const formatStatus = (status) => {
     approved: 'Approved',
     rejected: 'Rejected',
     enrolled: 'Enrolled',
+    withdrawn: 'Withdrawn',
+    cancelled: 'Cancelled',
   }
   return map[status] || status
 }
@@ -1000,6 +1129,172 @@ const handleApplicantUpload = async (event, docType) => {
   color: #92400e;
 }
 
+.action-banner-withdrawn {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.action-banner-cancelled {
+  background: #fefce8;
+  color: #92400e;
+}
+
+/* ── App actions ── */
+
+.app-actions {
+  padding: 0 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.app-actions .btn-see-app {
+  margin: 0;
+  width: 100%;
+}
+
+.btn-withdraw {
+  background: transparent;
+  border: 1.5px solid #dc2626;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-withdraw:hover {
+  background: #fef2f2;
+}
+
+/* ── Withdraw Modal ── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 8px;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.modal-field {
+  margin-bottom: 16px;
+}
+
+.modal-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.required-star {
+  color: #dc2626;
+}
+
+.radio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.radio-option:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.radio-option input[type="radio"] {
+  accent-color: #1a5fa4;
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.modal-textarea:focus {
+  outline: none;
+  border-color: #1a5fa4;
+}
+
+.modal-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin: 0 0 12px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ── Course info highlights ── */
 
 .app-course-info {
@@ -1071,6 +1366,16 @@ const handleApplicantUpload = async (event, docType) => {
 .status-physical_docs_required {
   background: #e3f2fd;
   color: #1565c0;
+}
+
+.status-withdrawn {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.status-cancelled {
+  background: #fefce8;
+  color: #92400e;
 }
 
 .status-completed {

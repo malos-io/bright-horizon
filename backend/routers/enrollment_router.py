@@ -1,4 +1,5 @@
 import logging
+import os
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Body, Depends, File, HTTPException, Query, Request, UploadFile
@@ -16,8 +17,12 @@ from email_templates.application_submitted import get_application_submitted_emai
 from email_templates.admin_new_application import get_admin_new_application_email_html
 from email_templates.interview_schedule import get_interview_schedule_email_html
 from email_templates.enrollment_completed import get_enrollment_completed_email_html
+from email_templates.application_withdrawn import get_application_withdrawn_email_html
+from email_templates.admin_application_withdrawn import get_admin_application_withdrawn_email_html
 
 NOTIFICATION_FROM = "notifications@brighthii.com"
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
+ADMISSIONS_EMAIL = "admin@brighthii.com" if _ENVIRONMENT == "dev" else "admissions@brighthii.com"
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -43,12 +48,30 @@ _VALID_SOURCES = {"applicant", "official"}
 ENROLLMENT_STATUSES = {
     "pending_upload", "pending_review", "documents_rejected",
     "in_waitlist", "physical_docs_required", "completed",
-    "archived",
+    "archived", "withdrawn", "cancelled",
     "pending",  # legacy alias
 }
 
 # Statuses that auto-status can overwrite (manual overrides like physical_docs_required won't be regressed)
 _AUTO_STATUSES = {"pending", "pending_upload", "pending_review", "documents_rejected"}
+
+# Statuses considered inactive (applicant can re-apply for the same course)
+_INACTIVE_STATUSES = {"archived", "completed", "withdrawn", "cancelled"}
+
+# Statuses from which an application can be withdrawn or cancelled
+_WITHDRAWABLE_STATUSES = {
+    "pending", "pending_upload", "pending_review",
+    "documents_rejected", "in_waitlist", "physical_docs_required",
+}
+
+_WITHDRAWAL_REASONS = [
+    "Schedule conflict",
+    "Financial reasons",
+    "Found another program",
+    "Personal/family reasons",
+    "Changed career plans",
+    "Other",
+]
 
 
 def _log_email_sent(doc_ref, email_type: str, subject: str, triggered_by: str = "system"):
@@ -182,6 +205,22 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
 async def submit_enrollment(request: Request, application: EnrollmentApplication):
     try:
         collection = "pending_enrollment_application"
+
+        # Duplicate application check: reject if same email+course has an active application
+        existing_apps = (
+            db.collection(collection)
+            .where("email", "==", application.email)
+            .where("course", "==", application.course)
+            .stream()
+        )
+        for existing_doc in existing_apps:
+            if existing_doc.to_dict().get("status") not in _INACTIVE_STATUSES:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"You already have an active application for {application.course}. "
+                           f"Please check your existing application status before applying again.",
+                )
+
         doc_data = application.model_dump()
         doc_data["status"] = "pending_upload"
         doc_data["created_at"] = firestore.SERVER_TIMESTAMP
@@ -231,7 +270,7 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
                 enrollment_id=doc_id,
             )
             await send_email(
-                to="admissions@brighthii.com",
+                to=ADMISSIONS_EMAIL,
                 subject=admin_subject,
                 html_content=admin_html,
                 from_email=NOTIFICATION_FROM,
@@ -240,6 +279,8 @@ async def submit_enrollment(request: Request, application: EnrollmentApplication
             logger.warning("Failed to send admin notification email: %s", email_err)
 
         return {"message": "Application submitted successfully", "id": doc_id}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Failed to submit enrollment")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1163,4 +1204,148 @@ def unarchive_enrollment(
         raise
     except Exception as e:
         logger.exception("Failed to unarchive enrollment")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/applicant/enrollments/{enrollment_id}/withdraw")
+async def withdraw_enrollment(
+    enrollment_id: str,
+    body: dict = Body(...),
+    applicant: dict = Depends(verify_applicant_jwt),
+):
+    """Allow an applicant to withdraw their enrollment application."""
+    reason = body.get("reason", "").strip()
+    comments = body.get("comments", "").strip()
+
+    if not reason:
+        raise HTTPException(status_code=400, detail="Withdrawal reason is required")
+    if reason not in _WITHDRAWAL_REASONS:
+        raise HTTPException(status_code=400, detail="Invalid withdrawal reason")
+    if reason == "Other" and not comments:
+        raise HTTPException(status_code=400, detail="Please provide details for your reason")
+
+    try:
+        doc_ref, data = _verify_enrollment_ownership(enrollment_id, applicant)
+
+        current_status = data.get("status", "pending_upload")
+        if current_status not in _WITHDRAWABLE_STATUSES:
+            raise HTTPException(
+                status_code=400,
+                detail="This application cannot be withdrawn in its current status.",
+            )
+
+        applicant_email = applicant.get("sub", "unknown")
+        now = datetime.now(timezone.utc).isoformat()
+
+        doc_ref.update({
+            "status": "withdrawn",
+            "previous_status": current_status,
+            "withdraw_reason": reason,
+            "withdraw_comments": comments,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": data.get("changelog", []) + [{
+                "field": "status",
+                "oldValue": current_status,
+                "newValue": "withdrawn",
+                "updatedBy": applicant_email,
+                "updatedAt": now,
+                "note": f"Withdrawn by applicant. Reason: {reason}",
+            }],
+        })
+
+        # Send withdrawal confirmation email to applicant
+        applicant_name = data.get("firstName", "Applicant")
+        course_name = data.get("course", "")
+        try:
+            subject = f"Application Withdrawn: {course_name} - Bright Horizon Institute"
+            html = get_application_withdrawn_email_html(applicant_name, course_name)
+            await send_email(
+                to=applicant_email,
+                subject=subject,
+                html_content=html,
+                from_email=NOTIFICATION_FROM,
+            )
+            _log_email_sent(doc_ref, "application_withdrawn", subject, triggered_by=applicant_email)
+        except Exception as email_err:
+            logger.warning("Failed to send withdrawal email to %s: %s", applicant_email, email_err)
+
+        # Notify admissions team
+        try:
+            admin_subject = f"Application Withdrawn: {applicant_name} - {course_name}"
+            admin_html = get_admin_application_withdrawn_email_html(
+                applicant_name=f"{data.get('firstName', '')} {data.get('lastName', '')}",
+                email=applicant_email,
+                course=course_name,
+                enrollment_id=enrollment_id,
+                reason=reason,
+                comments=comments,
+            )
+            await send_email(
+                to=ADMISSIONS_EMAIL,
+                subject=admin_subject,
+                html_content=admin_html,
+                from_email=NOTIFICATION_FROM,
+            )
+        except Exception as email_err:
+            logger.warning("Failed to send withdrawal admin notification: %s", email_err)
+
+        return {"message": "Application withdrawn successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to withdraw enrollment")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/enrollments/{enrollment_id}/cancel")
+def cancel_enrollment(
+    enrollment_id: str,
+    body: dict = Body(...),
+    admin: dict = Depends(verify_jwt),
+):
+    """Admin-initiated cancellation of an enrollment application."""
+    reason = body.get("reason", "").strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Cancellation reason is required")
+
+    try:
+        collection = "pending_enrollment_application"
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        current = doc.to_dict()
+        current_status = current.get("status", "pending_upload")
+
+        if current_status not in _WITHDRAWABLE_STATUSES:
+            raise HTTPException(
+                status_code=400,
+                detail="This application cannot be cancelled in its current status.",
+            )
+
+        admin_email = admin.get("sub", "unknown")
+        now = datetime.now(timezone.utc).isoformat()
+
+        doc_ref.update({
+            "status": "cancelled",
+            "previous_status": current_status,
+            "cancel_reason": reason,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": current.get("changelog", []) + [{
+                "field": "status",
+                "oldValue": current_status,
+                "newValue": "cancelled",
+                "updatedBy": admin_email,
+                "updatedAt": now,
+                "note": f"Cancelled by admin. Reason: {reason}",
+            }],
+        })
+
+        return {"message": "Enrollment cancelled"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to cancel enrollment")
         raise HTTPException(status_code=500, detail=str(e))

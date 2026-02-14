@@ -12,6 +12,8 @@
           <option value="physical_docs_required">Interview Required</option>
           <option value="completed">Completed</option>
           <option value="archived">Archived</option>
+          <option value="withdrawn">Withdrawn</option>
+          <option value="cancelled">Cancelled</option>
         </select>
         <div class="search-box">
           <input
@@ -96,6 +98,8 @@ function formatStatus(status) {
     physical_docs_required: 'Interview Required',
     completed: 'Completed',
     archived: 'Archived',
+    withdrawn: 'Withdrawn',
+    cancelled: 'Cancelled',
   }
   return map[status] || status
 }
@@ -310,6 +314,16 @@ onMounted(loadEnrollments)
 .status-archived {
   background: #e0e0e0;
   color: #616161;
+}
+
+.status-withdrawn {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.status-cancelled {
+  background: #fefce8;
+  color: #92400e;
 }
 
 .meta-date {
