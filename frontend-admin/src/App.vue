@@ -43,6 +43,15 @@
             <span class="nav-icon">&#9829;</span>
             Sponsors
           </router-link>
+          <div class="nav-divider"></div>
+          <router-link to="/tesda-instructors" class="nav-item">
+            <span class="nav-icon">&#128218;</span>
+            TESDA Instructors
+          </router-link>
+          <router-link to="/tesda-tvis" class="nav-item">
+            <span class="nav-icon">&#127979;</span>
+            TESDA TVIs
+          </router-link>
         </nav>
       </aside>
       <main class="main-content">
@@ -146,6 +155,12 @@ body {
 .nav-item.router-link-active {
   background: rgba(255, 255, 255, 0.1);
   color: white;
+}
+
+.nav-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 0.5rem 1.5rem;
 }
 
 .nav-icon {

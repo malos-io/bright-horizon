@@ -14,6 +14,8 @@ import SponsorScholars from '../views/SponsorScholars.vue'
 import StudentApplications from '../views/StudentApplications.vue'
 import InstructorApplications from '../views/InstructorApplications.vue'
 import InstructorApplicationDetail from '../views/InstructorApplicationDetail.vue'
+import TesdaInstructors from '../views/TesdaInstructors.vue'
+import TesdaTvis from '../views/TesdaTvis.vue'
 
 const routes = [
   {
@@ -92,6 +94,16 @@ const routes = [
     path: '/sponsors/:id/scholars',
     name: 'SponsorScholars',
     component: SponsorScholars,
+  },
+  {
+    path: '/tesda-instructors',
+    name: 'TesdaInstructors',
+    component: TesdaInstructors,
+  },
+  {
+    path: '/tesda-tvis',
+    name: 'TesdaTvis',
+    component: TesdaTvis,
   },
 ]
 

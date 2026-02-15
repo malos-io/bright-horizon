@@ -277,4 +277,36 @@ export const deleteInstructorApplication = async (id) => {
   return response.data
 }
 
+// ── TESDA Directory ──
+
+export const getTesdaInstructors = async (params = {}) => {
+  const response = await api.get('/tesda/instructors', { params })
+  return response.data
+}
+
+export const getTesdaTvis = async (params = {}) => {
+  const response = await api.get('/tesda/tvis', { params })
+  return response.data
+}
+
+export const updateTesdaInstructor = async (id, fields) => {
+  const response = await api.patch(`/tesda/instructors/${id}`, fields)
+  return response.data
+}
+
+export const updateTesdaTvi = async (id, fields) => {
+  const response = await api.patch(`/tesda/tvis/${id}`, fields)
+  return response.data
+}
+
+export const triggerTesdaSync = async () => {
+  const response = await api.post('/tesda/sync')
+  return response.data
+}
+
+export const getTesdaSyncStatus = async () => {
+  const response = await api.get('/tesda/sync-status')
+  return response.data
+}
+
 export default api
