@@ -1,6 +1,6 @@
 """
 TESDA NTTC Registry + TVI Scraper -> Firestore
-Scrapes trainers and TVIs from tesda.gov.ph, filtered for Region IX,
+Scrapes trainers and TVIs from tesda.gov.ph, filtered for Region IX and X,
 and syncs results to Firestore with upsert (merge).
 
 Usage:
@@ -113,7 +113,8 @@ def scrape_nttc_detail(session, detail_id):
     }
 
 
-REGION_IX_ADDRESS_MARKERS = [
+TARGET_ADDRESS_MARKERS = [
+    # Region IX
     "zamboanga del norte",
     "zamboanga del sur",
     "zamboanga sibugay",
@@ -126,18 +127,41 @@ REGION_IX_ADDRESS_MARKERS = [
     "pagadian",
     "isabela city",
     "ipil",
+    # Region X
+    "bukidnon",
+    "camiguin",
+    "lanao del norte",
+    "misamis occidental",
+    "misamis oriental",
+    "cagayan de oro",
+    "iligan city",
+    "iligan",
+    "oroquieta city",
+    "oroquieta",
+    "ozamiz city",
+    "ozamiz",
+    "tangub city",
+    "tangub",
+    "malaybalay city",
+    "malaybalay",
+    "valencia city",
+    "gingoog city",
+    "gingoog",
+    "el salvador city",
 ]
 
+TARGET_REGIONS = {"IX", "X"}
 
-def is_region_ix_address(address):
-    """Check if a TVI address belongs to Region IX by inspecting last 1-2 parts."""
+
+def is_target_region_address(address):
+    """Check if a TVI address belongs to Region IX or X by inspecting last 1-2 parts."""
     if not address:
         return False
     parts = [p.strip().lower() for p in address.split(",")]
     # Check last 2 parts (e.g. "Dipolog City, Zamboanga del Norte")
     tail = parts[-2:] if len(parts) >= 2 else parts[-1:]
     for part in tail:
-        for marker in REGION_IX_ADDRESS_MARKERS:
+        for marker in TARGET_ADDRESS_MARKERS:
             if marker in part:
                 return True
     return False
@@ -232,24 +256,24 @@ def scrape_qualification(session, qual_filter, loc_filters):
 
     print(f"    NTTC Total: {len(all_trainers)}")
 
-    # Check every trainer's detail page to find Region IX
+    # Check every trainer's detail page to find Region IX/X
     print(f"    Checking {len(all_trainers)} trainers via detail pages...")
-    region_ix_trainers = []
+    target_trainers = []
     for idx, t in enumerate(all_trainers, 1):
         if not t["detail_id"]:
             continue
         detail = scrape_nttc_detail(session, t["detail_id"])
         if detail:
             t.update(detail)
-            if detail["region"] == "IX":
-                region_ix_trainers.append(t)
+            if detail["region"] in TARGET_REGIONS:
+                target_trainers.append(t)
         if idx % 100 == 0:
             print(
-                f"      Checked {idx}/{len(all_trainers)} — Region IX so far: {len(region_ix_trainers)}"
+                f"      Checked {idx}/{len(all_trainers)} — Region IX/X so far: {len(target_trainers)}"
             )
         time.sleep(0.3)
 
-    print(f"    Confirmed Region IX: {len(region_ix_trainers)} trainers")
+    print(f"    Confirmed Region IX/X: {len(target_trainers)} trainers")
 
     # --- TVI Registry ---
     tvi_entries = []
@@ -280,22 +304,22 @@ def scrape_qualification(session, qual_filter, loc_filters):
 
     print(f"    TVI Total (deduplicated): {len(unique_tvi)} entries")
 
-    # Verify Region IX by checking address (last 1-2 comma parts)
+    # Verify Region IX/X by checking address (last 1-2 comma parts)
     verified_tvi = []
     skipped = []
     for entry in unique_tvi:
-        if is_region_ix_address(entry["address"]):
+        if is_target_region_address(entry["address"]):
             verified_tvi.append(entry)
         else:
             skipped.append(entry)
     if skipped:
-        print(f"    Skipped {len(skipped)} non-Region IX TVIs:")
+        print(f"    Skipped {len(skipped)} non-Region IX/X TVIs:")
         for s in skipped:
             print(f"      - {s['school']} | {s['address']}")
 
-    print(f"    TVI Verified Region IX: {len(verified_tvi)} entries")
+    print(f"    TVI Verified Region IX/X: {len(verified_tvi)} entries")
 
-    return region_ix_trainers, verified_tvi
+    return target_trainers, verified_tvi
 
 
 def slugify(text):
@@ -317,7 +341,7 @@ def sync_to_firestore(qual_data):
     all_instructors = []
     all_tvi = []
     for data in qual_data.values():
-        all_instructors.extend(data["region_ix"])
+        all_instructors.extend(data["trainers"])
         all_tvi.extend(data["tvi"])
 
     now = firestore.SERVER_TIMESTAMP
@@ -342,7 +366,7 @@ def sync_to_firestore(qual_data):
             {
                 "name": t["name"],
                 "course": t["qualification"],
-                "region": t.get("region", "IX"),
+                "region": t.get("region", ""),
                 "cert_num": t.get("cert_num", ""),
                 "nc_cert": t.get("nc_cert", ""),
                 "valid_until_nc": t.get("valid_until_nc", ""),
@@ -414,8 +438,9 @@ def main():
         }
     )
 
-    # All Region IX cities and municipalities
+    # Region IX and X cities and municipalities
     loc_filters = [
+        # ── Region IX ──
         # Cities
         "zamboanga", "dipolog", "dapitan", "pagadian", "isabela city",
         # Zamboanga del Norte municipalities
@@ -434,6 +459,34 @@ def main():
         "alicia", "buug", "diplahan", "imelda", "ipil",
         "kabasalan", "mabuhay", "malangas", "naga", "olutanga",
         "payao", "roseller lim", "siay", "talusan", "titay", "tungawan",
+        # ── Region X ──
+        # Cities
+        "cagayan de oro", "iligan", "oroquieta", "ozamiz", "tangub",
+        "malaybalay", "valencia", "gingoog", "el salvador",
+        # Bukidnon municipalities
+        "baungon", "cabanglasan", "damulog", "dangcagan", "don carlos",
+        "impasugong", "kadingilan", "kalilangan", "kibawe", "kitaotao",
+        "lantapan", "libona", "malitbog", "manolo fortich", "maramag",
+        "pangantucan", "quezon", "san fernando", "sumilao", "talakag",
+        # Camiguin municipalities
+        "catarman", "guinsiliban", "mahinog", "mambajao", "sagay",
+        # Lanao del Norte municipalities
+        "bacolod", "baloi", "baroy", "kapatagan", "kauswagan",
+        "kolambugan", "lala", "linamon", "magsaysay", "maigo",
+        "matungao", "munai", "nunungan", "pantao ragat", "pantar",
+        "poona piagapo", "salvador", "sapad", "sultan naga dimaporo",
+        "tagoloan", "tubod", "tangcal",
+        # Misamis Occidental municipalities
+        "aloran", "baliangao", "bonifacio", "calamba", "clarin",
+        "concepcion", "don victoriano chiongbian", "jimenez",
+        "lopez jaena", "panaon", "plaridel", "sapang dalaga",
+        "sinacaban", "tudela",
+        # Misamis Oriental municipalities
+        "alubijid", "balingasag", "balingoan", "binuangan", "claveria",
+        "gitagum", "initao", "jasaan", "kinoguitan", "lagonglong",
+        "laguindingan", "libertad", "lugait", "manticao", "medina",
+        "naawan", "opol", "salay", "sugbongcogon", "talisayan",
+        "villanueva",
     ]
 
     # Scrape each qualification
@@ -442,9 +495,9 @@ def main():
         print("=" * 60)
         print(f"Scraping: {qual}")
         print("=" * 60)
-        region_ix, tvi = scrape_qualification(session, qual, loc_filters)
+        trainers, tvi = scrape_qualification(session, qual, loc_filters)
         qual_data[qual] = {
-            "region_ix": region_ix,
+            "trainers": trainers,
             "tvi": tvi,
         }
 
