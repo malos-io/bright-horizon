@@ -55,7 +55,16 @@
 
       <div class="card-footer">
         <div class="price-section">
-          <span class="current-price">{{ course.is_coming_soon ? 'Available Soon' : 'Contact us for pricing' }}</span>
+          <template v-if="course.is_coming_soon">
+            <span class="current-price">Available Soon</span>
+          </template>
+          <template v-else-if="course.price > 0">
+            <span v-if="course.discounted_price" class="original-price">&#8369;{{ Number(course.price).toLocaleString() }}</span>
+            <span class="current-price">&#8369;{{ Number(course.discounted_price || course.price).toLocaleString() }}</span>
+          </template>
+          <template v-else>
+            <span class="current-price">Contact us for pricing</span>
+          </template>
         </div>
         <button v-if="course.is_coming_soon" class="coming-soon-btn" disabled>Coming Soon</button>
         <button v-else class="enroll-btn">View Course</button>

@@ -52,7 +52,12 @@
             </div>
           </div>
           <div v-else>
-            <div class="contact-pricing">
+            <div v-if="course.price > 0" class="price-display">
+              <div v-if="course.discounted_price" class="price-original">&#8369;{{ Number(course.price).toLocaleString() }}</div>
+              <div class="price-current">&#8369;{{ Number(course.discounted_price || course.price).toLocaleString() }}</div>
+              <div v-if="course.discounted_price" class="price-discount">{{ Math.round(((course.price - course.discounted_price) / course.price) * 100) }}% OFF</div>
+            </div>
+            <div v-else class="contact-pricing">
               <span class="contact-pricing-icon">&#128172;</span>
               <span class="contact-pricing-text">Contact us for pricing</span>
             </div>
@@ -184,7 +189,13 @@
     <!-- Mobile Sticky CTA -->
     <div class="mobile-cta" v-if="!course.is_coming_soon">
       <div class="mobile-price">
-        <span class="contact-pricing-label">Contact us for pricing</span>
+        <template v-if="course.price > 0">
+          <span v-if="course.discounted_price" class="mobile-price-original">&#8369;{{ Number(course.price).toLocaleString() }}</span>
+          <span class="mobile-price-current">&#8369;{{ Number(course.discounted_price || course.price).toLocaleString() }}</span>
+        </template>
+        <template v-else>
+          <span class="contact-pricing-label">Contact us for pricing</span>
+        </template>
         <span class="scholarship-label">&#127891; Scholarship Available</span>
       </div>
       <router-link :to="'/apply/' + route.params.slug" class="btn btn-primary">Apply for Class Now</router-link>
@@ -445,6 +456,39 @@ const formatDescription = (desc) => {
   font-size: 16px;
   font-weight: 600;
   color: #0d3b6e;
+}
+
+.price-display {
+  background: #e8f0fe;
+  border: 1px solid #c4d9f2;
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.price-original {
+  font-size: 16px;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.price-current {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0d3b6e;
+}
+
+.price-discount {
+  background: #ff6b6b;
+  color: white;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .scholarship-banner {
@@ -877,6 +921,20 @@ const formatDescription = (desc) => {
   justify-content: space-between;
   align-items: center;
   z-index: 100;
+}
+
+.mobile-price-original {
+  font-size: 13px;
+  color: #999;
+  text-decoration: line-through;
+  display: block;
+}
+
+.mobile-price-current {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0d3b6e;
+  display: block;
 }
 
 .mobile-price .contact-pricing-label {
