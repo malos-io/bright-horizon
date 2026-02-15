@@ -38,6 +38,7 @@
           <tr>
             <th>Name</th>
             <th>Course</th>
+            <th>Region</th>
             <th>NTTC Cert</th>
             <th>Valid Until</th>
             <th>Status</th>
@@ -49,6 +50,7 @@
           <tr v-for="item in filtered" :key="item.id">
             <td class="cell-name">{{ item.name }}</td>
             <td class="cell-course">{{ shortCourse(item.course) }}</td>
+            <td>{{ item.region || '--' }}</td>
             <td>{{ item.nttc_cert || item.cert_num || '--' }}</td>
             <td>
               <span :class="['validity-badge', isExpired(item.valid_until_nttc) ? 'expired' : 'valid']">
