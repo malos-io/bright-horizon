@@ -359,16 +359,9 @@ onMounted(loadData)
 .cell-name {
   font-weight: 600;
   color: #1a1a2e;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .cell-course {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
