@@ -20,6 +20,40 @@
         </div>
       </div>
 
+      <!-- Course Pricing -->
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title">Course Pricing</h3>
+          <div v-if="!editingPrice" class="section-actions">
+            <button class="btn-action" @click="startEditingPrice">Edit</button>
+          </div>
+        </div>
+        <div v-if="!editingPrice" class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Price</span>
+            <span class="info-value">{{ course.price > 0 ? '₱' + Number(course.price).toLocaleString() : 'Free / TBA' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Discounted Price</span>
+            <span class="info-value">{{ course.discounted_price != null ? '₱' + Number(course.discounted_price).toLocaleString() : '--' }}</span>
+          </div>
+        </div>
+        <div v-else class="edit-form">
+          <div class="form-row">
+            <label>Price (₱)</label>
+            <input type="number" min="0" step="0.01" v-model="priceForm.price" />
+          </div>
+          <div class="form-row">
+            <label>Discounted Price (₱)</label>
+            <input type="number" min="0" step="0.01" v-model="priceForm.discountedPrice" placeholder="Leave empty for no discount" />
+          </div>
+          <div class="form-actions">
+            <button class="btn-action btn-action-green" :disabled="savingPrice" @click="savePrice">{{ savingPrice ? 'Saving...' : 'Save' }}</button>
+            <button class="btn-action" @click="editingPrice = false">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Active Batch -->
       <div class="section">
         <div class="section-header">
@@ -175,7 +209,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCourseBatches, createBatch, editBatch, closeBatchEnrollment, closeBatch } from '../services/api'
+import { getCourseBatches, createBatch, editBatch, closeBatchEnrollment, closeBatch, updateCoursePrice } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -194,6 +228,10 @@ const editForm = ref({ startDate: '', deadline: '', instructorName: '', instruct
 const showNewBatch = ref(false)
 const newBatchForm = ref({ startDate: '', deadline: '', instructorName: '', instructorTitle: '' })
 
+const editingPrice = ref(false)
+const savingPrice = ref(false)
+const priceForm = ref({ price: 0, discountedPrice: '' })
+
 function toggleBatch(key) {
   expandedBatch.value = expandedBatch.value === key ? null : key
 }
@@ -207,6 +245,32 @@ function startEditing() {
     instructorTitle: activeBatch.value.instructor?.title || '',
   }
   editing.value = true
+}
+
+function startEditingPrice() {
+  if (!course.value) return
+  priceForm.value = {
+    price: course.value.price || 0,
+    discountedPrice: course.value.discounted_price != null ? course.value.discounted_price : '',
+  }
+  editingPrice.value = true
+}
+
+async function savePrice() {
+  savingPrice.value = true
+  try {
+    const payload = { price: Number(priceForm.value.price) || 0 }
+    const dp = priceForm.value.discountedPrice
+    payload.discounted_price = dp !== '' && dp !== null ? Number(dp) : null
+    await updateCoursePrice(route.params.slug, payload)
+    editingPrice.value = false
+    await reload()
+  } catch (err) {
+    console.error('Failed to save price:', err)
+    alert(err.response?.data?.detail || 'Failed to save price')
+  } finally {
+    savingPrice.value = false
+  }
 }
 
 async function saveEdit() {

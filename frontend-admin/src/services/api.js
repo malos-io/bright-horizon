@@ -131,6 +131,11 @@ export const getCourseBatches = async (slug) => {
   return response.data
 }
 
+export const updateCoursePrice = async (slug, data) => {
+  const response = await api.patch(`/courses/${slug}/price`, data)
+  return response.data
+}
+
 export const getStudents = async () => {
   const response = await api.get('/students')
   return response.data

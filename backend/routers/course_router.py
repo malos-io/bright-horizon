@@ -378,7 +378,7 @@ _OVERRIDES_TTL = 86400  # 24 hours
 
 
 def _get_course_overrides() -> dict:
-    """Read active/enrollment_closed batches as course overrides.
+    """Read active/enrollment_closed batches and course_settings as course overrides.
 
     Results are cached for 10 minutes to avoid hitting Firestore on
     every public page load. Admin batch mutations (create/edit/close)
@@ -391,6 +391,7 @@ def _get_course_overrides() -> dict:
         return _overrides_cache
 
     try:
+        # Batch overrides
         collection = "course_batches"
         docs = (
             db.collection(collection)
@@ -411,6 +412,21 @@ def _get_course_overrides() -> dict:
             if data.get("instructor"):
                 override["instructor"] = data["instructor"]
             result[slug] = override
+
+        # Course-level settings overrides (price, discounted_price)
+        try:
+            settings_docs = db.collection("course_settings").stream()
+            for sdoc in settings_docs:
+                sdata = sdoc.to_dict()
+                slug = sdoc.id  # document ID is the course slug
+                if slug not in result:
+                    result[slug] = {}
+                if "price" in sdata and sdata["price"] is not None:
+                    result[slug]["price"] = sdata["price"]
+                if "discounted_price" in sdata:
+                    result[slug]["discounted_price"] = sdata["discounted_price"]
+        except Exception as e:
+            logger.warning("Failed to fetch course_settings: %s", e)
 
         _overrides_cache = result
         _overrides_cache_ts = now
@@ -441,6 +457,10 @@ def _apply_overrides(course: Course, overrides: dict) -> Course:
         base_instructor = data["instructor"]
         base_instructor.update(override["instructor"])
         data["instructor"] = base_instructor
+    if "price" in override:
+        data["price"] = override["price"]
+    if "discounted_price" in override:
+        data["discounted_price"] = override["discounted_price"]
     return Course(**data)
 
 
@@ -546,6 +566,37 @@ def get_courses_summary(_admin: dict = Depends(verify_jwt)):
         })
 
     return results
+
+
+# ── Admin: course settings ────────────────────────────────────────────
+
+
+@router.patch("/courses/{slug}/price")
+def update_course_price(slug: str, body: dict = Body(...), _admin: dict = Depends(verify_jwt)):
+    """Update the price and/or discounted_price for a course."""
+    if slug not in _COURSES_BY_SLUG:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    updates = {}
+    if "price" in body:
+        price = body["price"]
+        if not isinstance(price, (int, float)) or price < 0:
+            raise HTTPException(status_code=400, detail="price must be a non-negative number")
+        updates["price"] = float(price)
+    if "discounted_price" in body:
+        dp = body["discounted_price"]
+        if dp is not None and (not isinstance(dp, (int, float)) or dp < 0):
+            raise HTTPException(status_code=400, detail="discounted_price must be a non-negative number or null")
+        updates["discounted_price"] = float(dp) if dp is not None else None
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No valid fields to update")
+
+    updates["updated_at"] = firestore.SERVER_TIMESTAMP
+    db.collection("course_settings").document(slug).set(updates, merge=True)
+
+    _invalidate_overrides_cache()
+    return {"message": "Course price updated"}
 
 
 # ── Admin: batch lifecycle ────────────────────────────────────────────
