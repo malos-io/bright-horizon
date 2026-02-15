@@ -10,7 +10,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-from routers import course_router, sponsor_router, enrollment_router, zoho_router, email_router, staff_router, pdf_router, address_router, otp_router, student_router, init_router, instructor_application_router
+from routers import course_router, sponsor_router, enrollment_router, zoho_router, email_router, staff_router, pdf_router, address_router, otp_router, student_router, init_router, instructor_application_router, tesda_router
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -42,6 +42,7 @@ app.include_router(address_router.router)
 app.include_router(otp_router.router)
 app.include_router(student_router.router)
 app.include_router(instructor_application_router.router)
+app.include_router(tesda_router.router)
 
 # Static files (logo for email templates)
 app.mount("/static", StaticFiles(directory="static"), name="static")
