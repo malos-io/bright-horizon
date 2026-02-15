@@ -160,7 +160,8 @@ const filtered = computed(() => {
     list = list.filter(
       (i) =>
         i.school?.toLowerCase().includes(q) ||
-        (i.trainers || []).join(' ').toLowerCase().includes(q)
+        (i.trainers || []).join(' ').toLowerCase().includes(q) ||
+        i.address?.toLowerCase().includes(q)
     )
   }
   if (sortKey.value) {
