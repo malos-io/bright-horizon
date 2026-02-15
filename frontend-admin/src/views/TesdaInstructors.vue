@@ -36,12 +36,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Course</th>
+            <th class="sortable" @click="toggleSort('name')">Name {{ sortIcon('name') }}</th>
+            <th class="sortable" @click="toggleSort('course')">Course {{ sortIcon('course') }}</th>
+            <th class="sortable" @click="toggleSort('region')">Region {{ sortIcon('region') }}</th>
             <th>NTTC Cert</th>
-            <th>Valid Until</th>
-            <th>Status</th>
-            <th>Contacted</th>
+            <th class="sortable" @click="toggleSort('valid_until_nttc')">Valid Until {{ sortIcon('valid_until_nttc') }}</th>
+            <th class="sortable" @click="toggleSort('status')">Status {{ sortIcon('status') }}</th>
+            <th class="sortable" @click="toggleSort('contacted')">Contacted {{ sortIcon('contacted') }}</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -49,6 +50,7 @@
           <tr v-for="item in filtered" :key="item.id">
             <td class="cell-name">{{ item.name }}</td>
             <td class="cell-course">{{ shortCourse(item.course) }}</td>
+            <td>{{ item.region || '--' }}</td>
             <td>{{ item.nttc_cert || item.cert_num || '--' }}</td>
             <td>
               <span :class="['validity-badge', isExpired(item.valid_until_nttc) ? 'expired' : 'valid']">
@@ -128,11 +130,13 @@ const syncing = ref(false)
 const saving = ref(false)
 const search = ref('')
 const courseFilter = ref('')
-const activeFilter = ref('')
+const activeFilter = ref('active')
 const contactedFilter = ref('')
 const lastSynced = ref('')
 const editing = ref(null)
 const editForm = ref({ status: 'new', contacted: false, notes: '' })
+const sortKey = ref('name')
+const sortDir = ref('asc')
 
 const courses = [
   'EVENTS MANAGEMENT SERVICES NC III',
@@ -160,8 +164,31 @@ const filtered = computed(() => {
     const q = search.value.toLowerCase()
     list = list.filter((i) => i.name?.toLowerCase().includes(q))
   }
+  if (sortKey.value) {
+    const key = sortKey.value
+    const dir = sortDir.value === 'asc' ? 1 : -1
+    list = [...list].sort((a, b) => {
+      const va = (a[key] ?? '').toString().toLowerCase()
+      const vb = (b[key] ?? '').toString().toLowerCase()
+      return va < vb ? -dir : va > vb ? dir : 0
+    })
+  }
   return list
 })
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
+
+function sortIcon(key) {
+  if (sortKey.value !== key) return ''
+  return sortDir.value === 'asc' ? '\u25B2' : '\u25BC'
+}
 
 function shortCourse(course) {
   if (!course) return '--'
@@ -346,6 +373,15 @@ onMounted(loadData)
   white-space: nowrap;
 }
 
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.data-table th.sortable:hover {
+  background: #eef1f4;
+}
+
 .data-table td {
   padding: 0.6rem 0.75rem;
   border-bottom: 1px solid #f0f0f0;
@@ -359,16 +395,9 @@ onMounted(loadData)
 .cell-name {
   font-weight: 600;
   color: #1a1a2e;
-  max-width: 200px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .cell-course {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
