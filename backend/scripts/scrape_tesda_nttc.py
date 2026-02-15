@@ -113,6 +113,36 @@ def scrape_nttc_detail(session, detail_id):
     }
 
 
+REGION_IX_ADDRESS_MARKERS = [
+    "zamboanga del norte",
+    "zamboanga del sur",
+    "zamboanga sibugay",
+    "zamboanga city",
+    "dipolog city",
+    "dipolog",
+    "dapitan city",
+    "dapitan",
+    "pagadian city",
+    "pagadian",
+    "isabela city",
+    "ipil",
+]
+
+
+def is_region_ix_address(address):
+    """Check if a TVI address belongs to Region IX by inspecting last 1-2 parts."""
+    if not address:
+        return False
+    parts = [p.strip().lower() for p in address.split(",")]
+    # Check last 2 parts (e.g. "Dipolog City, Zamboanga del Norte")
+    tail = parts[-2:] if len(parts) >= 2 else parts[-1:]
+    for part in tail:
+        for marker in REGION_IX_ADDRESS_MARKERS:
+            if marker in part:
+                return True
+    return False
+
+
 def scrape_tvi_page_v2(session, page_num, qual_filter, loc_filter="zamboanga"):
     """Scrape TVI page using DOM structure."""
     params = {
@@ -250,7 +280,22 @@ def scrape_qualification(session, qual_filter, loc_filters):
 
     print(f"    TVI Total (deduplicated): {len(unique_tvi)} entries")
 
-    return region_ix_trainers, unique_tvi
+    # Verify Region IX by checking address (last 1-2 comma parts)
+    verified_tvi = []
+    skipped = []
+    for entry in unique_tvi:
+        if is_region_ix_address(entry["address"]):
+            verified_tvi.append(entry)
+        else:
+            skipped.append(entry)
+    if skipped:
+        print(f"    Skipped {len(skipped)} non-Region IX TVIs:")
+        for s in skipped:
+            print(f"      - {s['school']} | {s['address']}")
+
+    print(f"    TVI Verified Region IX: {len(verified_tvi)} entries")
+
+    return region_ix_trainers, verified_tvi
 
 
 def slugify(text):
