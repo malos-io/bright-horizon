@@ -36,13 +36,13 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Institution</th>
-            <th>Course</th>
+            <th class="sortable" @click="toggleSort('school')">Institution {{ sortIcon('school') }}</th>
+            <th class="sortable" @click="toggleSort('course')">Course {{ sortIcon('course') }}</th>
             <th>Trainer(s)</th>
-            <th>Address</th>
+            <th class="sortable" @click="toggleSort('address')">Address {{ sortIcon('address') }}</th>
             <th>Phone</th>
-            <th>Status</th>
-            <th>Contacted</th>
+            <th class="sortable" @click="toggleSort('status')">Status {{ sortIcon('status') }}</th>
+            <th class="sortable" @click="toggleSort('contacted')">Contacted {{ sortIcon('contacted') }}</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -125,11 +125,13 @@ const syncing = ref(false)
 const saving = ref(false)
 const search = ref('')
 const courseFilter = ref('')
-const activeFilter = ref('')
+const activeFilter = ref('active')
 const contactedFilter = ref('')
 const lastSynced = ref('')
 const editing = ref(null)
 const editForm = ref({ status: 'new', contacted: false, notes: '' })
+const sortKey = ref('school')
+const sortDir = ref('asc')
 
 const courses = [
   'EVENTS MANAGEMENT SERVICES NC III',
@@ -161,8 +163,31 @@ const filtered = computed(() => {
         (i.trainers || []).join(' ').toLowerCase().includes(q)
     )
   }
+  if (sortKey.value) {
+    const key = sortKey.value
+    const dir = sortDir.value === 'asc' ? 1 : -1
+    list = [...list].sort((a, b) => {
+      const va = (a[key] ?? '').toString().toLowerCase()
+      const vb = (b[key] ?? '').toString().toLowerCase()
+      return va < vb ? -dir : va > vb ? dir : 0
+    })
+  }
   return list
 })
+
+function toggleSort(key) {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortKey.value = key
+    sortDir.value = 'asc'
+  }
+}
+
+function sortIcon(key) {
+  if (sortKey.value !== key) return ''
+  return sortDir.value === 'asc' ? '\u25B2' : '\u25BC'
+}
 
 function shortCourse(course) {
   if (!course) return '--'
@@ -337,6 +362,15 @@ onMounted(loadData)
   color: #555;
   border-bottom: 2px solid #e9ecef;
   white-space: nowrap;
+}
+
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.data-table th.sortable:hover {
+  background: #eef1f4;
 }
 
 .data-table td {
