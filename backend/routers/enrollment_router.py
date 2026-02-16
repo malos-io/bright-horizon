@@ -201,7 +201,7 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/enrollments")
-@limiter.limit("5/minute")
+@limiter.limit("2/minute")
 async def submit_enrollment(request: Request, application: EnrollmentApplication):
     try:
         collection = "pending_enrollment_application"
