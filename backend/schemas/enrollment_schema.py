@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 
 
@@ -49,3 +49,20 @@ class EnrollmentApplication(BaseModel):
     scholarshipVoucher: Optional[str] = ""
     scholarshipPackage: Optional[str] = ""
     scholarshipCourse: Optional[str] = ""
+
+    @field_validator('firstName', 'lastName')
+    @classmethod
+    def name_not_empty(cls, v):
+        if not v or not v.strip():
+            raise ValueError('This field is required')
+        return v.strip()
+
+    @field_validator('email')
+    @classmethod
+    def email_valid(cls, v):
+        if not v or not v.strip():
+            raise ValueError('Email is required')
+        v = v.strip().lower()
+        if '@' not in v or '.' not in v.split('@')[-1]:
+            raise ValueError('Invalid email address')
+        return v
