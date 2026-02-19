@@ -117,7 +117,7 @@
               <label>Region</label>
               <select v-model="address.selectedRegion.value">
                 <option value="">-- Select Region --</option>
-                <option v-for="r in address.regionOptions" :key="r" :value="r">{{ r }}</option>
+                <option v-for="r in address.regionOptions.value" :key="r" :value="r">{{ r }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -249,7 +249,7 @@
               <label>Region</label>
               <select v-model="birthplace.selectedRegion.value">
                 <option value="">-- Select Region --</option>
-                <option v-for="r in birthplace.regionOptions" :key="r" :value="r">{{ r }}</option>
+                <option v-for="r in birthplace.regionOptions.value" :key="r" :value="r">{{ r }}</option>
               </select>
             </div>
             <div class="form-group">
@@ -462,8 +462,8 @@ const availableCourses = computed(() => {
 // Mailing address cascading dropdowns (with barangay)
 const address = useAddressDropdown({ withBarangay: true })
 
-// Birthplace cascading dropdowns (no barangay)
-const birthplace = useAddressDropdown({ withBarangay: false })
+// Birthplace cascading dropdowns (no barangay, all PH regions)
+const birthplace = useAddressDropdown({ withBarangay: false, allRegions: true })
 
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
