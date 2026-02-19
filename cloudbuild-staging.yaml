@@ -137,6 +137,7 @@ steps:
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
+      - '--service-account=frontend-runtime@brighthii-staging.iam.gserviceaccount.com'
     id: 'deploy-frontend-public'
     waitFor: ['push-frontend-public']
 
@@ -185,6 +186,7 @@ steps:
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
+      - '--service-account=frontend-runtime@brighthii-staging.iam.gserviceaccount.com'
     id: 'deploy-frontend-admin'
     waitFor: ['push-frontend-admin']
 
@@ -231,6 +233,7 @@ steps:
       - '--cpu=1'
       - '--min-instances=0'
       - '--max-instances=10'
+      - '--service-account=frontend-runtime@brighthii-staging.iam.gserviceaccount.com'
     id: 'deploy-frontend-student'
     waitFor: ['push-frontend-student']
 
