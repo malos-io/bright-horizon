@@ -120,12 +120,19 @@
               </div>
               <p>All submitted documents have been reviewed and accepted. Please wait for further instructions from our admissions team.</p>
             </div>
+            <div v-else-if="app.status === 'pending_upload'" class="action-banner action-banner-warning">
+              <div class="action-banner-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <strong>Action Required: Upload Documents</strong>
+              </div>
+              <p>Your application is submitted. Please upload the required documents below to proceed. You can also edit your application details if needed.</p>
+            </div>
             <div v-else-if="app.status === 'documents_rejected'" class="action-banner action-banner-warning">
               <div class="action-banner-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <strong>Action Required</strong>
               </div>
-              <p>One or more documents need attention. Please click "See Application" below to review feedback and re-upload.</p>
+              <p>One or more documents need attention. Please click below to review feedback and re-upload.</p>
             </div>
             <div v-else-if="app.status === 'withdrawn'" class="action-banner action-banner-withdrawn">
               <div class="action-banner-header">
@@ -174,7 +181,7 @@
               </div>
             </div>
             <div class="app-actions">
-              <button class="btn btn-primary btn-full btn-see-app" @click="openApplicationDetail(app)">See Application</button>
+              <button class="btn btn-primary btn-full btn-see-app" @click="openApplicationDetail(app)">{{ getActionLabel(app.status) }}</button>
               <button v-if="canWithdraw(app.status)" class="btn btn-withdraw btn-full" @click="openWithdrawModal(app)">Withdraw Application</button>
             </div>
           </div>
@@ -550,6 +557,15 @@ const handleVerifyOtp = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const getActionLabel = (status) => {
+  const map = {
+    pending_upload: 'Upload Required Documents',
+    documents_rejected: 'Review & Re-upload Documents',
+    pending: 'Edit Application',
+  }
+  return map[status] || 'See Application'
 }
 
 const canWithdraw = (status) => {
