@@ -16,10 +16,9 @@ with open(_data_dir / "philippines_location.json", encoding="utf-8") as f:
 with open(_data_dir / "districts.json", encoding="utf-8") as f:
     _districts = json.load(f)
 
-# Region IX & X names (for filtered mode)
+# Region IX only (for mailing address)
 _local_regions = [
     "Region IX (Zamboanga Peninsula)",
-    "Region X (Northern Mindanao)",
 ]
 
 
