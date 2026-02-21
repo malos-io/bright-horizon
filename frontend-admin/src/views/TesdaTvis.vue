@@ -133,12 +133,10 @@ const editForm = ref({ status: 'new', contacted: false, notes: '' })
 const sortKey = ref('school')
 const sortDir = ref('asc')
 
-const courses = [
-  'EVENTS MANAGEMENT SERVICES NC III',
-  'BOOKKEEPING NC III',
-  'HOUSEKEEPING NC III',
-  'HILOT (WELLNESS MASSAGE) NC II',
-]
+const courses = computed(() => {
+  const set = new Set(tvis.value.map(i => i.course).filter(Boolean))
+  return [...set].sort()
+})
 
 const filtered = computed(() => {
   let list = tvis.value
