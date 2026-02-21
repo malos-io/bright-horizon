@@ -243,7 +243,8 @@ function exportCSV() {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `enrollments-${filterMode.value}-${new Date().toISOString().slice(0, 10)}.csv`
+  const courseSuffix = courseFilter.value !== 'all' ? `-${courseFilter.value.replace(/\s+/g, '_')}` : ''
+  a.download = `enrollments-${filterMode.value}${courseSuffix}-${new Date().toISOString().slice(0, 10)}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
