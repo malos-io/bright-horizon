@@ -39,6 +39,13 @@
             <option value="withdrawn">Withdrawn</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          <select v-model="courseFilter" class="status-filter">
+            <option value="all">All Courses</option>
+            <option v-for="course in courses" :key="course.id || course.slug" :value="course.title">
+              {{ course.title }}
+            </option>
+          </select>
+          <button class="btn-export" @click="exportCSV">Export CSV</button>
           <button class="btn-refresh" @click="loadEnrollments">Refresh</button>
         </div>
       </div>
@@ -57,7 +64,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="enrollment in displayedEnrollments" :key="enrollment.id">
+            <tr v-for="enrollment in paginatedEnrollments" :key="enrollment.id">
               <td>
                 <button class="btn-detail" @click="router.push('/application/' + enrollment.id)">View</button>
               </td>
@@ -96,6 +103,11 @@
           </tbody>
         </table>
       </div>
+      <div v-if="totalPages > 1" class="pagination">
+        <button class="btn-page" :disabled="currentPage === 1" @click="currentPage--">&laquo; Prev</button>
+        <span class="page-info">Page {{ currentPage }} of {{ totalPages }} ({{ displayedEnrollments.length }} results)</span>
+        <button class="btn-page" :disabled="currentPage === totalPages" @click="currentPage++">Next &raquo;</button>
+      </div>
     </div>
 
     <div class="section" style="margin-top: 1.5rem;">
@@ -130,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCourses, getCategories, getEnrollments, sendInterviewSchedule, completeEnrollment } from '../services/api'
 
@@ -141,6 +153,9 @@ const enrollments = ref([])
 const sendingInterview = ref(null)
 const completingEnrollment = ref(null)
 const filterMode = ref('active')
+const courseFilter = ref('all')
+const currentPage = ref(1)
+const perPage = 10
 
 function formatStartDate(startDates) {
   const val = (startDates && startDates.length) ? startDates[0] : ''
@@ -165,14 +180,73 @@ const sectionTitle = computed(() => {
 })
 
 const displayedEnrollments = computed(() => {
+  let result
   if (filterMode.value === 'active') {
-    return enrollments.value.filter(e => !INACTIVE_STATUSES.includes(e.status))
+    result = enrollments.value.filter(e => !INACTIVE_STATUSES.includes(e.status))
+  } else if (filterMode.value === 'all') {
+    result = enrollments.value
+  } else {
+    result = enrollments.value.filter(e => e.status === filterMode.value)
   }
-  if (filterMode.value === 'all') {
-    return enrollments.value
+  if (courseFilter.value !== 'all') {
+    result = result.filter(e => e.course === courseFilter.value)
   }
-  return enrollments.value.filter(e => e.status === filterMode.value)
+  return result
 })
+
+const totalPages = computed(() => Math.max(1, Math.ceil(displayedEnrollments.value.length / perPage)))
+
+const paginatedEnrollments = computed(() => {
+  const start = (currentPage.value - 1) * perPage
+  return displayedEnrollments.value.slice(start, start + perPage)
+})
+
+watch([filterMode, courseFilter], () => {
+  currentPage.value = 1
+})
+
+function buildMailingAddress(e) {
+  return [e.street, e.barangay, e.district, e.city, e.province, e.region]
+    .filter(Boolean)
+    .join(', ')
+}
+
+function escapeCsvField(val) {
+  const str = String(val ?? '')
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return '"' + str.replace(/"/g, '""') + '"'
+  }
+  return str
+}
+
+function exportCSV() {
+  const rows = displayedEnrollments.value
+  if (rows.length === 0) {
+    alert('No data to export.')
+    return
+  }
+  const headers = ['Name', 'Course', 'Email', 'Contact', 'Mailing Address', 'Status']
+  const csvRows = [headers.join(',')]
+  for (const e of rows) {
+    const name = `${e.lastName}, ${e.firstName} ${e.middleName || ''}`.trim()
+    const line = [
+      name,
+      e.course,
+      e.email,
+      e.contactNo || e.phone || '',
+      buildMailingAddress(e),
+      formatStatus(e.status),
+    ].map(escapeCsvField)
+    csvRows.push(line.join(','))
+  }
+  const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `enrollments-${filterMode.value}-${new Date().toISOString().slice(0, 10)}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 function formatStatus(status) {
   const map = {
@@ -329,6 +403,22 @@ onMounted(async () => {
   font-size: 1.1rem;
   color: #1a1a2e;
   margin-bottom: 1rem;
+}
+
+.btn-export {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #fff;
+  background: #166534;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-export:hover {
+  background: #14532d;
 }
 
 .btn-refresh {
@@ -496,6 +586,42 @@ onMounted(async () => {
   text-align: center;
   color: #999;
   padding: 2rem !important;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.btn-page {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1a5fa4;
+  background: #e8f0fe;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-page:hover:not(:disabled) {
+  background: #d0e2fc;
+}
+
+.btn-page:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.page-info {
+  font-size: 0.8rem;
+  color: #666;
 }
 
 @media (max-width: 768px) {
