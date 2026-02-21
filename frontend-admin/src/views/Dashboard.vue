@@ -211,8 +211,11 @@ function buildMailingAddress(e) {
     .join(', ')
 }
 
-function escapeCsvField(val) {
+function escapeCsvField(val, forceText = false) {
   const str = String(val ?? '')
+  if (forceText && str) {
+    return '="' + str.replace(/"/g, '""') + '"'
+  }
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return '"' + str.replace(/"/g, '""') + '"'
   }
@@ -229,14 +232,15 @@ function exportCSV() {
   const csvRows = [headers.join(',')]
   for (const e of rows) {
     const name = `${e.lastName}, ${e.firstName} ${e.middleName || ''}`.trim()
+    const contact = e.contactNo || e.phone || ''
     const line = [
-      name,
-      e.course,
-      e.email,
-      e.contactNo || e.phone || '',
-      buildMailingAddress(e),
-      formatStatus(e.status),
-    ].map(escapeCsvField)
+      escapeCsvField(name),
+      escapeCsvField(e.course),
+      escapeCsvField(e.email),
+      escapeCsvField(contact, true),
+      escapeCsvField(buildMailingAddress(e)),
+      escapeCsvField(formatStatus(e.status)),
+    ]
     csvRows.push(line.join(','))
   }
   const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
