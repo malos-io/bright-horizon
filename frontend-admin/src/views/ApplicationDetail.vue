@@ -427,7 +427,7 @@
 
               <div class="doc-slots">
                 <!-- Applicant Upload Slot -->
-                <div class="doc-slot">
+                <div class="doc-slot" v-if="!info.official_only">
                   <span class="slot-label">Applicant Upload</span>
                   <div v-if="documents[docType]?.applicant_upload" class="slot-file">
                     <a :href="documents[docType].applicant_upload.file_url" target="_blank" class="file-link">
@@ -479,6 +479,27 @@
               </div>
             </div>
           </div>
+
+          <!-- Supporting Documents -->
+          <h4 style="margin: 1.5rem 0 0.75rem; color: #333;">Additional Supporting Documents</h4>
+          <div class="supporting-docs">
+            <div class="supporting-upload">
+              <label class="upload-label" :class="{ disabled: supportingUploading }">
+                <input type="file" class="file-input" @change="handleSupportingUpload" :disabled="supportingUploading" multiple />
+                {{ supportingUploading ? 'Uploading...' : 'Upload Files' }}
+              </label>
+            </div>
+            <div v-if="supportingDocuments.length === 0" class="supporting-empty">No supporting documents uploaded.</div>
+            <div v-else class="supporting-list">
+              <div v-for="(doc, idx) in supportingDocuments" :key="idx" class="supporting-item">
+                <a :href="doc.file_url" target="_blank" class="file-link">{{ doc.file_name }}</a>
+                <span class="file-meta">{{ formatDate(doc.uploaded_at) }}</span>
+                <button class="btn-delete-doc" @click="handleSupportingDelete(doc.gcs_path)" :disabled="supportingDeleting[doc.gcs_path]">
+                  &#10005;
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -492,31 +513,6 @@
             <button class="btn-reject-action" @click="submitReject" :disabled="!rejectModal.reason.trim()">
               Confirm Reject
             </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Supporting Documents Section -->
-      <div class="section">
-        <div class="section-header">
-          <h3 class="section-toggle">Additional Supporting Documents</h3>
-        </div>
-        <div class="supporting-docs">
-          <div class="supporting-upload">
-            <label class="upload-label" :class="{ disabled: supportingUploading }">
-              <input type="file" class="file-input" @change="handleSupportingUpload" :disabled="supportingUploading" multiple />
-              {{ supportingUploading ? 'Uploading...' : 'Upload Files' }}
-            </label>
-          </div>
-          <div v-if="supportingDocuments.length === 0" class="supporting-empty">No supporting documents uploaded.</div>
-          <div v-else class="supporting-list">
-            <div v-for="(doc, idx) in supportingDocuments" :key="idx" class="supporting-item">
-              <a :href="doc.file_url" target="_blank" class="file-link">{{ doc.file_name }}</a>
-              <span class="file-meta">{{ formatDate(doc.uploaded_at) }}</span>
-              <button class="btn-delete-doc" @click="handleSupportingDelete(doc.gcs_path)" :disabled="supportingDeleting[doc.gcs_path]">
-                &#10005;
-              </button>
-            </div>
           </div>
         </div>
       </div>
