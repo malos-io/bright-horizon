@@ -427,7 +427,8 @@
 
               <div class="doc-slots">
                 <!-- Applicant Upload Slot -->
-                <div class="doc-slot" v-if="!info.official_only">
+                <div class="doc-slot" v-if="info.official_only"></div>
+                <div class="doc-slot" v-else>
                   <span class="slot-label">Applicant Upload</span>
                   <div v-if="documents[docType]?.applicant_upload" class="slot-file">
                     <a :href="documents[docType].applicant_upload.file_url" target="_blank" class="file-link">
