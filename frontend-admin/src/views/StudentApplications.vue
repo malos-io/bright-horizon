@@ -9,7 +9,8 @@
           <option value="pending_review">Pending Review</option>
           <option value="documents_rejected">Docs Rejected</option>
           <option value="in_waitlist">In Waitlist</option>
-          <option value="physical_docs_required">Interview Required</option>
+          <option value="physical_docs_required">Physical Docs Required</option>
+          <option value="waiting_for_class_start">Waiting for Class</option>
           <option value="completed">Completed</option>
           <option value="archived">Archived</option>
           <option value="withdrawn">Withdrawn</option>
@@ -95,7 +96,8 @@ function formatStatus(status) {
     pending_review: 'Pending Review',
     documents_rejected: 'Docs Rejected',
     in_waitlist: 'In Waitlist',
-    physical_docs_required: 'Interview Required',
+    physical_docs_required: 'Physical Docs Required',
+    waiting_for_class_start: 'Waiting for Class',
     completed: 'Completed',
     archived: 'Archived',
     withdrawn: 'Withdrawn',
@@ -304,6 +306,11 @@ onMounted(loadEnrollments)
 .status-physical_docs_required {
   background: #e8f0fe;
   color: #1a5fa4;
+}
+
+.status-waiting_for_class_start {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .status-completed {

@@ -96,6 +96,11 @@ export const completeEnrollment = async (enrollmentId) => {
   return response.data
 }
 
+export const removeFromBatch = async (enrollmentId) => {
+  const response = await api.post(`/enrollments/${enrollmentId}/remove-from-batch`)
+  return response.data
+}
+
 export const archiveEnrollment = async (enrollmentId) => {
   const response = await api.post(`/enrollments/${enrollmentId}/archive`)
   return response.data
@@ -199,6 +204,22 @@ export const uploadDocument = async (enrollmentId, docType, file, source = 'offi
 
 export const deleteDocument = async (enrollmentId, docType, source = 'official') => {
   const response = await api.delete(`/enrollments/${enrollmentId}/documents/${docType}?source=${source}`)
+  return response.data
+}
+
+export const uploadSupportingDocument = async (enrollmentId, file) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  const response = await api.post(
+    `/enrollments/${enrollmentId}/supporting-documents`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  )
+  return response.data
+}
+
+export const deleteSupportingDocument = async (enrollmentId, gcsPath) => {
+  const response = await api.delete(`/enrollments/${enrollmentId}/supporting-documents?gcs_path=${encodeURIComponent(gcsPath)}`)
   return response.data
 }
 

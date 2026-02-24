@@ -57,19 +57,29 @@
       </div>
       <div v-else-if="statusValue === 'physical_docs_required'" class="workflow-banner workflow-complete">
         <div class="workflow-text">
-          <strong>Ready to complete enrollment?</strong>
-          <span>Send the confirmation email and promote this applicant to a student account.</span>
-          <span class="workflow-hint">Requires all required official document scans to be uploaded.</span>
+          <strong>Physical Document Verification</strong>
+          <span>Upload official scans of the required documents. Status will auto-advance once all official scans are uploaded.</span>
         </div>
-        <button class="btn-workflow btn-workflow-green" @click="handleCompleteEnrollment" :disabled="actionLoading">
-          {{ actionLoading ? 'Processing...' : 'Complete Enrollment' }}
+      </div>
+      <div v-else-if="statusValue === 'waiting_for_class_start'" class="workflow-banner workflow-complete">
+        <div class="workflow-text">
+          <strong>Ready to assign to a class batch</strong>
+          <span v-if="activeBatchInfo">Assign this applicant to the current <strong>{{ activeBatchInfo.courseName }}</strong> batch (start date: <strong>{{ activeBatchInfo.startDate }}</strong>).</span>
+          <span v-else>No active batch found for this course. Please create a class batch first.</span>
+        </div>
+        <button v-if="activeBatchInfo" class="btn-workflow btn-workflow-green" @click="handleCompleteEnrollment" :disabled="actionLoading">
+          {{ actionLoading ? 'Processing...' : `Add to Batch (${activeBatchInfo.startDate})` }}
         </button>
       </div>
       <div v-else-if="statusValue === 'completed'" class="workflow-banner workflow-done">
         <div class="workflow-text">
           <strong>Enrollment completed</strong>
           <span>This applicant has been promoted to a student account.</span>
+          <span v-if="enrollment.batch_start_date" class="workflow-hint">Assigned batch start date: <strong>{{ enrollment.batch_start_date }}</strong></span>
         </div>
+        <button class="btn-workflow btn-workflow-orange" @click="handleRemoveFromBatch" :disabled="actionLoading">
+          {{ actionLoading ? 'Processing...' : 'Remove from Batch' }}
+        </button>
       </div>
       <div v-else-if="statusValue === 'archived'" class="workflow-banner workflow-archived">
         <div class="workflow-text">
@@ -486,6 +496,31 @@
         </div>
       </div>
 
+      <!-- Supporting Documents Section -->
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-toggle">Additional Supporting Documents</h3>
+        </div>
+        <div class="supporting-docs">
+          <div class="supporting-upload">
+            <label class="upload-label" :class="{ disabled: supportingUploading }">
+              <input type="file" class="file-input" @change="handleSupportingUpload" :disabled="supportingUploading" multiple />
+              {{ supportingUploading ? 'Uploading...' : 'Upload Files' }}
+            </label>
+          </div>
+          <div v-if="supportingDocuments.length === 0" class="supporting-empty">No supporting documents uploaded.</div>
+          <div v-else class="supporting-list">
+            <div v-for="(doc, idx) in supportingDocuments" :key="idx" class="supporting-item">
+              <a :href="doc.file_url" target="_blank" class="file-link">{{ doc.file_name }}</a>
+              <span class="file-meta">{{ formatDate(doc.uploaded_at) }}</span>
+              <button class="btn-delete-doc" @click="handleSupportingDelete(doc.gcs_path)" :disabled="supportingDeleting[doc.gcs_path]">
+                &#10005;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Email History Section -->
       <div class="section" v-if="emailsSent.length > 0">
         <div class="section-header">
@@ -552,7 +587,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getDocuments, uploadDocument, deleteDocument, reviewDocument, sendInterviewSchedule, completeEnrollment, archiveEnrollment, unarchiveEnrollment, cancelEnrollment, getSponsors } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getCoursesSummary, getDocuments, uploadDocument, deleteDocument, reviewDocument, uploadSupportingDocument, deleteSupportingDocument, sendInterviewSchedule, completeEnrollment, removeFromBatch, archiveEnrollment, unarchiveEnrollment, cancelEnrollment, getSponsors } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -570,12 +605,16 @@ const docsExpanded = ref(true)
 const changelogExpanded = ref(true)
 const emailsExpanded = ref(true)
 const courses = ref([])
+const coursesSummary = ref([])
 const sponsors = ref([])
 const sponsorValue = ref('')
 const documentTypes = ref({})
 const documents = ref({})
 const uploading = ref({})
 const deleting = ref({})
+const supportingDocuments = ref([])
+const supportingUploading = ref(false)
+const supportingDeleting = ref({})
 const statusValue = ref('')
 const rejectModal = reactive({ show: false, docType: '', reason: '' })
 const cancelModal = reactive({ show: false, reason: '' })
@@ -585,7 +624,8 @@ const enrollmentStatuses = [
   { value: 'pending_review', label: 'Pending Document Review' },
   { value: 'documents_rejected', label: 'Documents Rejected' },
   { value: 'in_waitlist', label: 'In Waitlist' },
-  { value: 'physical_docs_required', label: 'Physical Documents and Interview Required' },
+  { value: 'physical_docs_required', label: 'Physical Documents Required' },
+  { value: 'waiting_for_class_start', label: 'Waiting for Class Start' },
   { value: 'completed', label: 'Completed' },
   { value: 'archived', label: 'Archived' },
   { value: 'withdrawn', label: 'Withdrawn' },
@@ -602,8 +642,19 @@ const isEarlyStatus = computed(() =>
 )
 
 const canCancel = computed(() =>
-  ['pending', 'pending_upload', 'pending_review', 'documents_rejected', 'in_waitlist', 'physical_docs_required'].includes(statusValue.value)
+  ['pending', 'pending_upload', 'pending_review', 'documents_rejected', 'in_waitlist', 'physical_docs_required', 'waiting_for_class_start'].includes(statusValue.value)
 )
+
+const activeBatchInfo = computed(() => {
+  if (!enrollment.value?.course) return null
+  const courseName = enrollment.value.course
+  const summary = coursesSummary.value.find(c => c.title === courseName)
+  if (!summary || !summary.active_batch_status) return null
+  return {
+    startDate: summary.current_start_date || 'TBA',
+    courseName: summary.title,
+  }
+})
 
 function formatStatusLabel(value) {
   return enrollmentStatuses.find(s => s.value === value)?.label || value
@@ -817,14 +868,31 @@ async function handleSendInterview() {
 }
 
 async function handleCompleteEnrollment() {
-  if (!confirm(`Complete enrollment for ${enrollment.value.firstName} ${enrollment.value.lastName}? This will send a confirmation email and promote them to a student account.`)) return
+  const batchInfo = activeBatchInfo.value
+  const startDate = batchInfo?.startDate || 'TBA'
+  if (!confirm(`Assign ${enrollment.value.firstName} ${enrollment.value.lastName} to the current batch (start date: ${startDate})? This will send a confirmation email and promote them to a student account.`)) return
   actionLoading.value = true
   try {
     await completeEnrollment(route.params.id)
-    alert('Enrollment completed successfully.')
+    alert('Student assigned to batch successfully.')
     await loadEnrollment()
   } catch (e) {
-    const msg = e.response?.data?.detail || 'Failed to complete enrollment.'
+    const msg = e.response?.data?.detail || 'Failed to assign to batch.'
+    alert(msg)
+  } finally {
+    actionLoading.value = false
+  }
+}
+
+async function handleRemoveFromBatch() {
+  if (!confirm(`Remove ${enrollment.value.firstName} ${enrollment.value.lastName} from their current batch? They will be moved back to "Waiting for Class Start" and notified by email.`)) return
+  actionLoading.value = true
+  try {
+    await removeFromBatch(route.params.id)
+    alert('Student removed from batch.')
+    await loadEnrollment()
+  } catch (e) {
+    const msg = e.response?.data?.detail || 'Failed to remove from batch.'
     alert(msg)
   } finally {
     actionLoading.value = false
@@ -922,8 +990,41 @@ async function loadDocuments() {
     const data = await getDocuments(route.params.id)
     documentTypes.value = data.document_types || {}
     documents.value = data.documents || {}
+    supportingDocuments.value = data.supporting_documents || []
   } catch (e) {
     console.error('Failed to load documents:', e)
+  }
+}
+
+async function handleSupportingUpload(event) {
+  const files = event.target.files
+  if (!files || files.length === 0) return
+  supportingUploading.value = true
+  try {
+    for (const file of files) {
+      await uploadSupportingDocument(route.params.id, file)
+    }
+    await loadDocuments()
+  } catch (e) {
+    console.error('Failed to upload supporting document:', e)
+    alert('Failed to upload supporting document. Please try again.')
+  } finally {
+    supportingUploading.value = false
+    event.target.value = ''
+  }
+}
+
+async function handleSupportingDelete(gcsPath) {
+  if (!confirm('Delete this supporting document?')) return
+  supportingDeleting.value[gcsPath] = true
+  try {
+    await deleteSupportingDocument(route.params.id, gcsPath)
+    await loadDocuments()
+  } catch (e) {
+    console.error('Failed to delete supporting document:', e)
+    alert('Failed to delete supporting document. Please try again.')
+  } finally {
+    supportingDeleting.value[gcsPath] = false
   }
 }
 
@@ -935,6 +1036,7 @@ async function handleUpload(event, docType, source) {
   try {
     await uploadDocument(route.params.id, docType, file, source)
     await loadDocuments()
+    await loadEnrollment()
   } catch (e) {
     console.error('Failed to upload document:', e)
     alert('Failed to upload document. Please try again.')
@@ -997,6 +1099,11 @@ onMounted(async () => {
     courses.value = await getCourses()
   } catch (e) {
     console.error('Failed to load courses:', e)
+  }
+  try {
+    coursesSummary.value = await getCoursesSummary()
+  } catch (e) {
+    console.error('Failed to load courses summary:', e)
   }
   try {
     sponsors.value = await getSponsors()
@@ -1087,6 +1194,7 @@ onMounted(async () => {
 .status-rejected, .status-documents_rejected { background: #f8d7da; color: #721c24; }
 .status-pending_review { background: #e3f2fd; color: #1565c0; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
+.status-waiting_for_class_start { background: #fef3c7; color: #92400e; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
 .status-archived { background: #e0e0e0; color: #616161; }
 .status-withdrawn { background: #fef2f2; color: #991b1b; }
@@ -1514,6 +1622,12 @@ onMounted(async () => {
 
 .btn-workflow-green:hover:not(:disabled) { background: #15803d; }
 
+.btn-workflow-orange {
+  background: #ea580c;
+}
+
+.btn-workflow-orange:hover:not(:disabled) { background: #c2410c; }
+
 .workflow-done {
   background: #f0fdf4;
   color: #166534;
@@ -1603,6 +1717,45 @@ onMounted(async () => {
 /* ── Documents section ── */
 
 .docs-content { margin-top: 1.25rem; }
+
+.supporting-docs {
+  margin-top: 1rem;
+}
+
+.supporting-upload {
+  margin-bottom: 1rem;
+}
+
+.supporting-empty {
+  color: #999;
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}
+
+.supporting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.supporting-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: #fafbff;
+  border: 1px solid #e8f0fe;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.supporting-item .file-link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 .docs-grid {
   display: flex;

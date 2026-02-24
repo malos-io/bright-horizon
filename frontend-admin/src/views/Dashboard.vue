@@ -33,7 +33,8 @@
             <option value="pending_review">Pending Review</option>
             <option value="documents_rejected">Docs Rejected</option>
             <option value="in_waitlist">In Waitlist</option>
-            <option value="physical_docs_required">Interview Required</option>
+            <option value="physical_docs_required">Physical Docs Required</option>
+            <option value="waiting_for_class_start">Waiting for Class</option>
             <option value="completed">Completed</option>
             <option value="archived">Archived</option>
             <option value="withdrawn">Withdrawn</option>
@@ -88,12 +89,12 @@
                   {{ sendingInterview === enrollment.id ? 'Sending...' : 'Send Interview Schedule' }}
                 </button>
                 <button
-                  v-if="enrollment.status === 'physical_docs_required'"
+                  v-if="enrollment.status === 'waiting_for_class_start'"
                   class="btn-action btn-action-green"
                   @click="handleCompleteEnrollment(enrollment)"
                   :disabled="completingEnrollment === enrollment.id"
                 >
-                  {{ completingEnrollment === enrollment.id ? 'Completing...' : 'Complete' }}
+                  {{ completingEnrollment === enrollment.id ? 'Assigning...' : 'Assign to Batch' }}
                 </button>
               </td>
             </tr>
@@ -260,7 +261,8 @@ function formatStatus(status) {
     pending_review: 'Pending Review',
     documents_rejected: 'Docs Rejected',
     in_waitlist: 'In Waitlist',
-    physical_docs_required: 'Physical Documents and Interview Required',
+    physical_docs_required: 'Physical Docs Required',
+    waiting_for_class_start: 'Waiting for Class',
     completed: 'Completed',
     archived: 'Archived',
     withdrawn: 'Withdrawn',
@@ -535,6 +537,7 @@ onMounted(async () => {
 .status-pending_review { background: #e3f2fd; color: #1565c0; }
 .status-in_waitlist { background: #d4edda; color: #155724; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
+.status-waiting_for_class_start { background: #fef3c7; color: #92400e; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
 .status-archived { background: #e0e0e0; color: #616161; }
 .status-withdrawn { background: #fef2f2; color: #991b1b; }

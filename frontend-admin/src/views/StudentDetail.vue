@@ -149,7 +149,8 @@ function formatStatus(status) {
     pending_review: 'Pending Review',
     documents_rejected: 'Docs Rejected',
     in_waitlist: 'In Waitlist',
-    physical_docs_required: 'Physical Docs & Interview Required',
+    physical_docs_required: 'Physical Docs Required',
+    waiting_for_class_start: 'Waiting for Class',
     completed: 'Completed',
   }
   return map[status] || status
@@ -482,6 +483,7 @@ onMounted(async () => {
 .status-documents_rejected { background: #f8d7da; color: #721c24; }
 .status-in_waitlist { background: #d4edda; color: #155724; }
 .status-physical_docs_required { background: #e8f0fe; color: #1a5fa4; }
+.status-waiting_for_class_start { background: #fef3c7; color: #92400e; }
 .status-completed { background: #c8e6c9; color: #1b5e20; }
 
 /* Documents */

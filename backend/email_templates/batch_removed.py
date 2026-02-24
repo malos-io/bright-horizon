@@ -3,7 +3,7 @@ import os
 PUBLIC_API_URL = os.getenv("PUBLIC_API_URL", "http://localhost:8000")
 
 
-def get_in_waitlist_email_html(name: str) -> str:
+def get_batch_removed_email_html(name: str, course: str) -> str:
     logo_url = f"{PUBLIC_API_URL}/static/logo-email.png"
 
     return f"""<!DOCTYPE html>
@@ -26,29 +26,24 @@ def get_in_waitlist_email_html(name: str) -> str:
                     <!-- Body -->
                     <tr>
                         <td style="padding:40px;">
-                            <h2 style="margin:0 0 10px; color:#1a1a2e; font-size:22px;">Great News!</h2>
+                            <h2 style="margin:0 0 10px; color:#1a1a2e; font-size:22px;">Class Schedule Update</h2>
                             <p style="margin:0 0 20px; color:#555; font-size:15px; line-height:1.6;">
                                 Hi {name},
                             </p>
                             <p style="margin:0 0 20px; color:#555; font-size:15px; line-height:1.6;">
-                                We are pleased to inform you that all of your submitted application documents have been reviewed and <strong>accepted</strong>.
+                                Your class schedule for <strong>{course}</strong> has been updated. We will notify you once a new class date is available.
                             </p>
-                            <!-- Success Box -->
+                            <!-- Info Box -->
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 25px;">
                                 <tr>
-                                    <td align="center" style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:24px;">
-                                        <div style="font-size:36px; margin-bottom:8px;">&#10003;</div>
-                                        <p style="margin:0; font-size:16px; color:#166534; font-weight:700;">Documents Accepted</p>
+                                    <td align="center" style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:24px;">
+                                        <p style="margin:0; font-size:15px; color:#1e40af; line-height:1.6;">
+                                            Your enrollment for <strong>{course}</strong> is still active.<br>
+                                            We will be in touch with your updated class schedule soon.
+                                        </p>
                                     </td>
                                 </tr>
                             </table>
-                            <h3 style="margin:0 0 12px; color:#1a1a2e; font-size:16px;">What happens next?</h3>
-                            <p style="margin:0 0 20px; color:#555; font-size:15px; line-height:1.6;">
-                                Your application has been placed on our <strong>waitlist</strong>. Our admissions team will be in touch with you regarding the next steps of your enrollment process.
-                            </p>
-                            <p style="margin:0 0 25px; color:#555; font-size:15px; line-height:1.6;">
-                                Please wait for further instructions from our team. We appreciate your patience and look forward to welcoming you at Bright Horizon Institute.
-                            </p>
                             <p style="margin:0; color:#888; font-size:13px; line-height:1.6; text-align:center;">
                                 If you have any questions, please contact us at<br>
                                 <a href="mailto:support@brighthii.com" style="color:#1a5fa4; text-decoration:none; font-weight:600;">support@brighthii.com</a>
