@@ -279,7 +279,10 @@ onMounted(async () => {
       getDocuments(enrollmentId),
     ])
     enrollment.value = enrollData
-    documentTypes.value = docData.document_types || {}
+    const allTypes = docData.document_types || {}
+    documentTypes.value = Object.fromEntries(
+      Object.entries(allTypes).filter(([, meta]) => !meta.official_only)
+    )
     documents.value = docData.documents || {}
   } catch (e) {
     errorMsg.value = e.response?.data?.detail || 'Failed to load enrollment details.'
@@ -309,8 +312,8 @@ const fullAddress = computed(() => {
 const steps = [
   { key: 'pending_upload', label: 'Upload Documents' },
   { key: 'pending_review', label: 'Under Review' },
-  { key: 'in_waitlist', label: 'Waitlisted' },
-  { key: 'physical_docs_required', label: 'Interview' },
+  { key: 'physical_docs_required', label: 'Physical Docs' },
+  { key: 'waiting_for_class_start', label: 'Waiting for Class' },
   { key: 'completed', label: 'Enrolled' },
 ]
 
@@ -318,6 +321,7 @@ const currentStepIndex = computed(() => {
   const status = enrollment.value.status
   if (status === 'documents_rejected') return 0
   if (status === 'pending') return 0
+  if (status === 'in_waitlist') return steps.findIndex(s => s.key === 'physical_docs_required')
   const idx = steps.findIndex(s => s.key === status)
   return idx >= 0 ? idx : 0
 })
@@ -358,15 +362,21 @@ const actionBanner = computed(() => {
     },
     physical_docs_required: {
       type: 'info',
-      icon: '\u{1F4DE}',
-      title: 'Interview Required',
-      message: 'Please check your email for the interview schedule. Bring your physical documents.',
+      icon: '\u{1F4CB}',
+      title: 'Physical Documents Required',
+      message: 'Please visit our office and bring the original copies of your submitted documents for verification.',
+    },
+    waiting_for_class_start: {
+      type: 'wait',
+      icon: '\u{1F552}',
+      title: 'Waiting for Class Schedule',
+      message: 'Your documents have been verified. Please wait for your class schedule assignment. You will be notified by email.',
     },
     completed: {
       type: 'success',
       icon: '\u{1F389}',
       title: 'Enrollment Complete!',
-      message: 'Congratulations! You are now enrolled. Check your email for further instructions.',
+      message: 'Congratulations! You have been assigned to a class. Check your email for your schedule details.',
     },
     withdrawn: {
       type: 'withdrawn',

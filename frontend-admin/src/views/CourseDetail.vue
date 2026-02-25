@@ -109,6 +109,30 @@
           </div>
         </div>
 
+        <!-- Active batch students list -->
+        <div v-if="activeBatch && !editing && activeBatch.students?.length" class="batch-students" style="margin-top: 1rem;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Enrollment Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="s in activeBatch.students" :key="s.enrollment_id">
+                <td>
+                  <button class="btn-detail" @click="router.push('/application/' + s.enrollment_id)">View</button>
+                </td>
+                <td>{{ s.lastName }}, {{ s.firstName }}</td>
+                <td>{{ s.email }}</td>
+                <td>{{ formatDate(s.created_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
         <!-- Edit active batch mode -->
         <div v-if="editing" class="edit-form">
           <div class="form-row">

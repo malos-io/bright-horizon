@@ -61,6 +61,13 @@ def _v(data: dict, key: str, default: str = "") -> str:
     return str(val) if val else default
 
 
+def _short_region(value: str) -> str:
+    """Extract short region name, e.g. 'Region IX (Zamboanga Peninsula)' → 'Region IX'."""
+    if "(" in value:
+        return value.split("(")[0].strip()
+    return value
+
+
 def build_tesda_pdf(data: dict) -> io.BytesIO:
     """Overlay applicant data onto the official TESDA form template PDF."""
 
@@ -130,7 +137,7 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
     # Address — Row 2: City/Municipality, Province, Region (centered)
     txtc(300, 422, _v(data, "city"))
     txtc(510, 422, _v(data, "province"))
-    txtc(690, 422, _v(data, "region"))
+    txtc(690, 422, _short_region(_v(data, "region")))
 
     # Email, Contact No, Nationality (centered)
     txtc(300, 460, _v(data, "email"), size=SMALL_SIZE)
@@ -173,7 +180,7 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
     # 3.4 Birthplace — inside the birthplace boxes
     txtc(280, 720, _v(data, "birthplaceCity"))
     txtc(500, 720, _v(data, "birthplaceProvince"))
-    txtc(680, 720, _v(data, "birthplaceRegion"))
+    txtc(680, 720, _short_region(_v(data, "birthplaceRegion")))
 
     # ═══════════════════════════════════════════════════════════════════
     # SECTION 3.5 — EDUCATIONAL ATTAINMENT
