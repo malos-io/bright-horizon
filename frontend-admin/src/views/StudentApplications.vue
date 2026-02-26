@@ -47,6 +47,7 @@
         </div>
         <div class="card-meta">
           <span :class="['status-badge', 'status-' + enrollment.status]">{{ formatStatus(enrollment.status) }}</span>
+          <span class="meta-days">{{ formatDaysInStatus(enrollment.days_in_status) }}</span>
           <span class="meta-date">{{ formatDate(enrollment.created_at) }}</span>
         </div>
         <span class="card-arrow">&#8594;</span>
@@ -104,6 +105,13 @@ function formatStatus(status) {
     cancelled: 'Cancelled',
   }
   return map[status] || status
+}
+
+function formatDaysInStatus(days) {
+  if (days == null) return ''
+  if (days === 0) return 'Today'
+  if (days === 1) return '1 day in status'
+  return `${days} days in status`
 }
 
 function formatDate(dateStr) {
@@ -331,6 +339,12 @@ onMounted(loadEnrollments)
 .status-cancelled {
   background: #fefce8;
   color: #92400e;
+}
+
+.meta-days {
+  font-size: 0.7rem;
+  color: #b07800;
+  font-weight: 500;
 }
 
 .meta-date {

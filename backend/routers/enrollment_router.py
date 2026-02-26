@@ -202,6 +202,7 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
             "created_at", direction=firestore.Query.DESCENDING
         ).stream()
 
+        now = datetime.now(timezone.utc)
         enrollments = []
         for doc in docs:
             data = doc.to_dict()
@@ -209,6 +210,28 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
             # Convert Firestore timestamp to ISO string
             if data.get("created_at"):
                 data["created_at"] = data["created_at"].isoformat()
+
+            # Compute days_in_status from the most recent status changelog entry
+            status_since = None
+            for entry in reversed(data.get("changelog") or []):
+                if entry.get("field") == "status":
+                    status_since = entry.get("updatedAt")
+                    break
+            if status_since:
+                try:
+                    since_dt = datetime.fromisoformat(status_since)
+                    data["days_in_status"] = (now - since_dt).days
+                except (ValueError, TypeError):
+                    data["days_in_status"] = None
+            elif data.get("created_at"):
+                try:
+                    since_dt = datetime.fromisoformat(data["created_at"])
+                    data["days_in_status"] = (now - since_dt).days
+                except (ValueError, TypeError):
+                    data["days_in_status"] = None
+            else:
+                data["days_in_status"] = None
+
             enrollments.append(data)
 
         return enrollments
