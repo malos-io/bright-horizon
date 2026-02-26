@@ -233,6 +233,21 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
             else:
                 data["days_in_status"] = None
 
+            # Compute days since last follow-up email
+            last_follow_up = None
+            for email_entry in reversed(data.get("emails_sent") or []):
+                if email_entry.get("type") == "follow_up":
+                    last_follow_up = email_entry.get("sent_at")
+                    break
+            if last_follow_up:
+                try:
+                    fu_dt = datetime.fromisoformat(last_follow_up)
+                    data["days_since_follow_up"] = (now - fu_dt).days
+                except (ValueError, TypeError):
+                    data["days_since_follow_up"] = None
+            else:
+                data["days_since_follow_up"] = None
+
             enrollments.append(data)
 
         return enrollments

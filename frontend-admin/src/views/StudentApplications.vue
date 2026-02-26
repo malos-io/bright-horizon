@@ -48,13 +48,16 @@
         <div class="card-meta">
           <span :class="['status-badge', 'status-' + enrollment.status]">{{ formatStatus(enrollment.status) }}</span>
           <span class="meta-days">{{ formatDaysInStatus(enrollment.days_in_status) }}</span>
+          <span v-if="enrollment.days_since_follow_up != null" class="meta-follow-up-info">
+            Followed up {{ enrollment.days_since_follow_up === 0 ? 'today' : enrollment.days_since_follow_up === 1 ? '1 day ago' : enrollment.days_since_follow_up + ' days ago' }}
+          </span>
           <button
             v-if="shouldShowFollowUp(enrollment)"
             class="btn-follow-up"
             :disabled="sendingFollowUp === enrollment.id"
             @click.stop="handleFollowUp(enrollment)"
           >
-            {{ sendingFollowUp === enrollment.id ? 'Sending...' : 'Follow Up' }}
+            {{ sendingFollowUp === enrollment.id ? 'Sending...' : enrollment.days_since_follow_up != null ? 'Follow Up Again' : 'Follow Up' }}
           </button>
           <span class="meta-date">{{ formatDate(enrollment.created_at) }}</span>
         </div>
@@ -374,6 +377,12 @@ onMounted(loadEnrollments)
   font-size: 0.7rem;
   color: #b07800;
   font-weight: 500;
+}
+
+.meta-follow-up-info {
+  font-size: 0.65rem;
+  color: #666;
+  font-style: italic;
 }
 
 .btn-follow-up {
