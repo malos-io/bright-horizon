@@ -77,6 +77,9 @@
                 <span class="status-badge" :class="'status-' + enrollment.status">
                   {{ formatStatus(enrollment.status) }}
                 </span>
+                <div v-if="enrollment.days_in_status != null" class="days-in-status">
+                  {{ formatDaysInStatus(enrollment.days_in_status) }}
+                </div>
               </td>
               <td>{{ formatDate(enrollment.created_at) }}</td>
               <td>
@@ -269,6 +272,13 @@ function formatStatus(status) {
     cancelled: 'Cancelled',
   }
   return map[status] || status
+}
+
+function formatDaysInStatus(days) {
+  if (days == null) return ''
+  if (days === 0) return 'Today'
+  if (days === 1) return '1 day in status'
+  return `${days} days in status`
 }
 
 function formatDate(dateStr) {
@@ -516,6 +526,13 @@ onMounted(async () => {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
+}
+
+.days-in-status {
+  font-size: 0.7rem;
+  color: #b07800;
+  font-weight: 500;
+  margin-top: 0.25rem;
 }
 
 .status-pending {
