@@ -146,7 +146,20 @@ def _recompute_enrollment_status(doc_ref, data: dict) -> str | None:
         new_status = "waiting_for_class_start" if all_official_scans else "physical_docs_required"
 
     if new_status != current_status:
-        doc_ref.update({"status": new_status, "updated_at": firestore.SERVER_TIMESTAMP})
+        now = datetime.now(timezone.utc).isoformat()
+        existing_changelog = data.get("changelog", [])
+        doc_ref.update({
+            "status": new_status,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": existing_changelog + [{
+                "field": "status",
+                "oldValue": current_status,
+                "newValue": new_status,
+                "updatedBy": "system",
+                "updatedAt": now,
+                "note": "Auto-computed from document review states",
+            }],
+        })
         return new_status
     return None
 
