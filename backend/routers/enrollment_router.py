@@ -20,6 +20,7 @@ from email_templates.batch_assigned import get_batch_assigned_email_html
 from email_templates.batch_removed import get_batch_removed_email_html
 from email_templates.application_withdrawn import get_application_withdrawn_email_html
 from email_templates.admin_application_withdrawn import get_admin_application_withdrawn_email_html
+from email_templates.follow_up import get_follow_up_email_html
 
 NOTIFICATION_FROM = "notifications@brighthii.com"
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
@@ -238,6 +239,64 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
     except Exception as e:
         logger.exception("Failed to fetch enrollments")
         raise HTTPException(status_code=500, detail=str(e))
+
+_STATUS_LABELS = {
+    "pending": "Pending",
+    "pending_upload": "Pending Upload",
+    "pending_review": "Pending Review",
+    "documents_rejected": "Documents Rejected",
+    "in_waitlist": "In Waitlist",
+    "physical_docs_required": "Physical Docs Required",
+    "waiting_for_class_start": "Waiting for Class Start",
+    "completed": "Completed",
+    "archived": "Archived",
+    "withdrawn": "Withdrawn",
+    "cancelled": "Cancelled",
+}
+
+
+@router.post("/enrollments/{enrollment_id}/follow-up")
+async def send_follow_up_email(enrollment_id: str, _admin: dict = Depends(verify_jwt)):
+    try:
+        collection = "pending_enrollment_application"
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        data = doc.to_dict()
+        status = data.get("status", "")
+
+        # Don't allow follow-up for terminal / non-actionable statuses
+        if status in ("withdrawn", "completed", "cancelled", "waiting_for_class_start"):
+            raise HTTPException(status_code=400, detail="Follow-up not applicable for this status")
+
+        name = data.get("firstName", "Applicant")
+        email = data.get("email")
+        course = data.get("course", "")
+        status_label = _STATUS_LABELS.get(status, status)
+
+        if not email:
+            raise HTTPException(status_code=400, detail="Applicant has no email address")
+
+        subject = f"Follow-Up: Your {course} Application - Bright Horizon Institute"
+        html = get_follow_up_email_html(name, course, status_label)
+
+        await send_email(
+            to=email,
+            subject=subject,
+            html_content=html,
+            from_email=NOTIFICATION_FROM,
+        )
+        _log_email_sent(doc_ref, "follow_up", subject, triggered_by="admin")
+
+        return {"message": "Follow-up email sent successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to send follow-up email for %s", enrollment_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/enrollments")
 @limiter.limit("2/minute")
