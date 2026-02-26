@@ -47,6 +47,18 @@
         </div>
         <div class="card-meta">
           <span :class="['status-badge', 'status-' + enrollment.status]">{{ formatStatus(enrollment.status) }}</span>
+          <span class="meta-days">{{ formatDaysInStatus(enrollment.days_in_status) }}</span>
+          <span v-if="enrollment.days_since_follow_up != null" class="meta-follow-up-info">
+            Followed up {{ enrollment.days_since_follow_up === 0 ? 'today' : enrollment.days_since_follow_up === 1 ? '1 day ago' : enrollment.days_since_follow_up + ' days ago' }}
+          </span>
+          <button
+            v-if="shouldShowFollowUp(enrollment)"
+            class="btn-follow-up"
+            :disabled="sendingFollowUp === enrollment.id"
+            @click.stop="handleFollowUp(enrollment)"
+          >
+            {{ sendingFollowUp === enrollment.id ? 'Sending...' : enrollment.days_since_follow_up != null ? 'Follow Up Again' : 'Follow Up' }}
+          </button>
           <span class="meta-date">{{ formatDate(enrollment.created_at) }}</span>
         </div>
         <span class="card-arrow">&#8594;</span>
@@ -61,13 +73,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getEnrollments } from '../services/api'
+import { getEnrollments, sendFollowUpEmail } from '../services/api'
 
 const router = useRouter()
 const enrollments = ref([])
 const loading = ref(false)
 const search = ref('')
 const statusFilter = ref('')
+const sendingFollowUp = ref(null)
+
+const _NO_FOLLOW_UP_STATUSES = ['withdrawn', 'completed', 'cancelled', 'waiting_for_class_start']
 
 const filtered = computed(() => {
   let list = enrollments.value
@@ -106,6 +121,13 @@ function formatStatus(status) {
   return map[status] || status
 }
 
+function formatDaysInStatus(days) {
+  if (days == null) return ''
+  if (days === 0) return 'Today'
+  if (days === 1) return '1 day in status'
+  return `${days} days in status`
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '--'
   const d = new Date(dateStr)
@@ -115,6 +137,24 @@ function formatDate(dateStr) {
     month: 'short',
     day: 'numeric',
   })
+}
+
+function shouldShowFollowUp(enrollment) {
+  if (_NO_FOLLOW_UP_STATUSES.includes(enrollment.status)) return false
+  return enrollment.days_in_status != null && enrollment.days_in_status >= 5
+}
+
+async function handleFollowUp(enrollment) {
+  sendingFollowUp.value = enrollment.id
+  try {
+    await sendFollowUpEmail(enrollment.id)
+    alert(`Follow-up email sent to ${enrollment.email}`)
+  } catch (err) {
+    alert('Failed to send follow-up email. Please try again.')
+    console.error('Follow-up email error:', err)
+  } finally {
+    sendingFollowUp.value = null
+  }
 }
 
 async function loadEnrollments() {
@@ -331,6 +371,40 @@ onMounted(loadEnrollments)
 .status-cancelled {
   background: #fefce8;
   color: #92400e;
+}
+
+.meta-days {
+  font-size: 0.7rem;
+  color: #b07800;
+  font-weight: 500;
+}
+
+.meta-follow-up-info {
+  font-size: 0.65rem;
+  color: #666;
+  font-style: italic;
+}
+
+.btn-follow-up {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: none;
+  background: #e8f0fe;
+  color: #1a5fa4;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.btn-follow-up:hover:not(:disabled) {
+  background: #d0e2fc;
+}
+
+.btn-follow-up:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .meta-date {
