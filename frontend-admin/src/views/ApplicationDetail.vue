@@ -10,6 +10,9 @@
         <button v-else class="btn-archive" @click="handleArchive" :disabled="actionLoading">
           {{ actionLoading ? 'Archiving...' : 'Archive' }}
         </button>
+        <button v-if="shouldShowFollowUp" class="btn-follow-up" @click="handleFollowUp" :disabled="sendingFollowUp">
+          {{ sendingFollowUp ? 'Sending...' : enrollment.days_since_follow_up != null ? 'Follow Up Again' : 'Send Follow-Up' }}
+        </button>
         <button v-if="canCancel" class="btn-cancel-app" @click="openCancelModal" :disabled="actionLoading">
           {{ actionLoading ? 'Cancelling...' : 'Cancel Application' }}
         </button>
@@ -584,7 +587,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getCoursesSummary, getDocuments, uploadDocument, deleteDocument, reviewDocument, uploadSupportingDocument, deleteSupportingDocument, sendInterviewSchedule, completeEnrollment, removeFromBatch, archiveEnrollment, unarchiveEnrollment, cancelEnrollment, getSponsors } from '../services/api'
+import { getEnrollment, updateEnrollment, exportEnrollmentPdf, getCourses, getCoursesSummary, getDocuments, uploadDocument, deleteDocument, reviewDocument, uploadSupportingDocument, deleteSupportingDocument, sendInterviewSchedule, completeEnrollment, removeFromBatch, archiveEnrollment, unarchiveEnrollment, cancelEnrollment, getSponsors, sendFollowUpEmail } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -615,6 +618,15 @@ const supportingDeleting = ref({})
 const statusValue = ref('')
 const rejectModal = reactive({ show: false, docType: '', reason: '' })
 const cancelModal = reactive({ show: false, reason: '' })
+const sendingFollowUp = ref(false)
+
+const _NO_FOLLOW_UP_STATUSES = ['withdrawn', 'completed', 'cancelled', 'waiting_for_class_start']
+
+const shouldShowFollowUp = computed(() => {
+  if (!enrollment.value) return false
+  if (_NO_FOLLOW_UP_STATUSES.includes(statusValue.value)) return false
+  return enrollment.value.days_in_status != null && enrollment.value.days_in_status >= 5
+})
 
 const enrollmentStatuses = [
   { value: 'pending_upload', label: 'Pending Upload of Required Documents' },
@@ -920,6 +932,20 @@ async function handleUnarchive() {
     alert(msg)
   } finally {
     actionLoading.value = false
+  }
+}
+
+async function handleFollowUp() {
+  sendingFollowUp.value = true
+  try {
+    await sendFollowUpEmail(route.params.id)
+    alert(`Follow-up email sent to ${enrollment.value.email}`)
+    await loadEnrollment()
+  } catch (err) {
+    alert('Failed to send follow-up email. Please try again.')
+    console.error('Follow-up email error:', err)
+  } finally {
+    sendingFollowUp.value = false
   }
 }
 
@@ -1648,6 +1674,21 @@ onMounted(async () => {
   color: #92400e;
   border: 1px solid #fde68a;
 }
+
+.btn-follow-up {
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1a5fa4;
+  background: #e8f0fe;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-follow-up:hover:not(:disabled) { background: #d0e2fc; }
+.btn-follow-up:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn-cancel-app {
   padding: 0.4rem 1rem;
