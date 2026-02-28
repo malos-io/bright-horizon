@@ -729,7 +729,10 @@ const openApplicationDetail = async (app) => {
       getApplicantDocuments(app.id),
     ])
     selectedEnrollment.value = enrollment
-    documentTypes.value = docs.document_types || {}
+    const allTypes = docs.document_types || {}
+    documentTypes.value = Object.fromEntries(
+      Object.entries(allTypes).filter(([, meta]) => !meta.official_only)
+    )
     applicantDocuments.value = docs.documents || {}
   } catch (e) {
     if (e.response?.status === 401) {
