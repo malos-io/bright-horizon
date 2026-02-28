@@ -20,6 +20,7 @@ from email_templates.batch_assigned import get_batch_assigned_email_html
 from email_templates.batch_removed import get_batch_removed_email_html
 from email_templates.application_withdrawn import get_application_withdrawn_email_html
 from email_templates.admin_application_withdrawn import get_admin_application_withdrawn_email_html
+from email_templates.follow_up import get_follow_up_email_html
 
 NOTIFICATION_FROM = "notifications@brighthii.com"
 _ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
@@ -145,7 +146,20 @@ def _recompute_enrollment_status(doc_ref, data: dict) -> str | None:
         new_status = "waiting_for_class_start" if all_official_scans else "physical_docs_required"
 
     if new_status != current_status:
-        doc_ref.update({"status": new_status, "updated_at": firestore.SERVER_TIMESTAMP})
+        now = datetime.now(timezone.utc).isoformat()
+        existing_changelog = data.get("changelog", [])
+        doc_ref.update({
+            "status": new_status,
+            "updated_at": firestore.SERVER_TIMESTAMP,
+            "changelog": existing_changelog + [{
+                "field": "status",
+                "oldValue": current_status,
+                "newValue": new_status,
+                "updatedBy": "system",
+                "updatedAt": now,
+                "note": "Auto-computed from document review states",
+            }],
+        })
         return new_status
     return None
 
@@ -202,6 +216,7 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
             "created_at", direction=firestore.Query.DESCENDING
         ).stream()
 
+        now = datetime.now(timezone.utc)
         enrollments = []
         for doc in docs:
             data = doc.to_dict()
@@ -209,12 +224,107 @@ def get_enrollments(_admin: dict = Depends(verify_jwt)):
             # Convert Firestore timestamp to ISO string
             if data.get("created_at"):
                 data["created_at"] = data["created_at"].isoformat()
+
+            # Compute days_in_status from the most recent status changelog entry
+            status_since = None
+            for entry in reversed(data.get("changelog") or []):
+                if entry.get("field") == "status":
+                    status_since = entry.get("updatedAt")
+                    break
+            if status_since:
+                try:
+                    since_dt = datetime.fromisoformat(status_since)
+                    data["days_in_status"] = (now - since_dt).days
+                except (ValueError, TypeError):
+                    data["days_in_status"] = None
+            elif data.get("created_at"):
+                try:
+                    since_dt = datetime.fromisoformat(data["created_at"])
+                    data["days_in_status"] = (now - since_dt).days
+                except (ValueError, TypeError):
+                    data["days_in_status"] = None
+            else:
+                data["days_in_status"] = None
+
+            # Compute days since last follow-up email
+            last_follow_up = None
+            for email_entry in reversed(data.get("emails_sent") or []):
+                if email_entry.get("type") == "follow_up":
+                    last_follow_up = email_entry.get("sent_at")
+                    break
+            if last_follow_up:
+                try:
+                    fu_dt = datetime.fromisoformat(last_follow_up)
+                    data["days_since_follow_up"] = (now - fu_dt).days
+                except (ValueError, TypeError):
+                    data["days_since_follow_up"] = None
+            else:
+                data["days_since_follow_up"] = None
+
             enrollments.append(data)
 
         return enrollments
     except Exception as e:
         logger.exception("Failed to fetch enrollments")
         raise HTTPException(status_code=500, detail=str(e))
+
+_STATUS_LABELS = {
+    "pending": "Pending",
+    "pending_upload": "Pending Upload",
+    "pending_review": "Pending Review",
+    "documents_rejected": "Documents Rejected",
+    "in_waitlist": "In Waitlist",
+    "physical_docs_required": "Physical Docs Required",
+    "waiting_for_class_start": "Waiting for Class Start",
+    "completed": "Completed",
+    "archived": "Archived",
+    "withdrawn": "Withdrawn",
+    "cancelled": "Cancelled",
+}
+
+
+@router.post("/enrollments/{enrollment_id}/follow-up")
+async def send_follow_up_email(enrollment_id: str, _admin: dict = Depends(verify_jwt)):
+    try:
+        collection = "pending_enrollment_application"
+        doc_ref = db.collection(collection).document(enrollment_id)
+        doc = doc_ref.get()
+        if not doc.exists:
+            raise HTTPException(status_code=404, detail="Enrollment not found")
+
+        data = doc.to_dict()
+        status = data.get("status", "")
+
+        # Don't allow follow-up for terminal / non-actionable statuses
+        if status in ("withdrawn", "completed", "cancelled", "waiting_for_class_start"):
+            raise HTTPException(status_code=400, detail="Follow-up not applicable for this status")
+
+        name = data.get("firstName", "Applicant")
+        email = data.get("email")
+        course = data.get("course", "")
+        status_label = _STATUS_LABELS.get(status, status)
+
+        if not email:
+            raise HTTPException(status_code=400, detail="Applicant has no email address")
+
+        subject = f"Follow-Up: Your {course} Application - Bright Horizon Institute"
+        html = get_follow_up_email_html(name, course, status_label)
+
+        await send_email(
+            to=email,
+            subject=subject,
+            html_content=html,
+            from_email=NOTIFICATION_FROM,
+        )
+        _log_email_sent(doc_ref, "follow_up", subject, triggered_by="admin")
+
+        return {"message": "Follow-up email sent successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("Failed to send follow-up email for %s", enrollment_id)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/enrollments")
 @limiter.limit("2/minute")

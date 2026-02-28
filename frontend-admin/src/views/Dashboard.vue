@@ -77,9 +77,20 @@
                 <span class="status-badge" :class="'status-' + enrollment.status">
                   {{ formatStatus(enrollment.status) }}
                 </span>
+                <div v-if="enrollment.days_in_status != null" class="days-in-status">
+                  {{ formatDaysInStatus(enrollment.days_in_status) }}
+                </div>
               </td>
               <td>{{ formatDate(enrollment.created_at) }}</td>
               <td>
+                <button
+                  v-if="shouldShowFollowUp(enrollment)"
+                  class="btn-action btn-action-follow-up"
+                  @click="handleFollowUp(enrollment)"
+                  :disabled="sendingFollowUp === enrollment.id"
+                >
+                  {{ sendingFollowUp === enrollment.id ? 'Sending...' : enrollment.days_since_follow_up != null ? 'Follow Up Again' : 'Send Follow-Up' }}
+                </button>
                 <button
                   v-if="enrollment.status === 'in_waitlist'"
                   class="btn-action"
@@ -145,7 +156,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getCourses, getCategories, getEnrollments, sendInterviewSchedule, completeEnrollment } from '../services/api'
+import { getCourses, getCategories, getEnrollments, sendInterviewSchedule, completeEnrollment, sendFollowUpEmail } from '../services/api'
 
 const router = useRouter()
 const courses = ref([])
@@ -153,6 +164,14 @@ const categories = ref([])
 const enrollments = ref([])
 const sendingInterview = ref(null)
 const completingEnrollment = ref(null)
+const sendingFollowUp = ref(null)
+
+const _NO_FOLLOW_UP_STATUSES = ['withdrawn', 'completed', 'cancelled', 'waiting_for_class_start']
+
+function shouldShowFollowUp(enrollment) {
+  if (_NO_FOLLOW_UP_STATUSES.includes(enrollment.status)) return false
+  return enrollment.days_in_status != null && enrollment.days_in_status >= 5
+}
 const filterMode = ref('active')
 const courseFilter = ref('all')
 const currentPage = ref(1)
@@ -271,6 +290,13 @@ function formatStatus(status) {
   return map[status] || status
 }
 
+function formatDaysInStatus(days) {
+  if (days == null) return ''
+  if (days === 0) return 'Today'
+  if (days === 1) return '1 day in status'
+  return `${days} days in status`
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return '--'
   const d = new Date(dateStr)
@@ -314,6 +340,20 @@ async function handleSendInterview(enrollment) {
     alert(msg)
   } finally {
     sendingInterview.value = null
+  }
+}
+
+async function handleFollowUp(enrollment) {
+  sendingFollowUp.value = enrollment.id
+  try {
+    await sendFollowUpEmail(enrollment.id)
+    alert(`Follow-up email sent to ${enrollment.email}`)
+    await loadEnrollments()
+  } catch (err) {
+    alert('Failed to send follow-up email. Please try again.')
+    console.error('Follow-up email error:', err)
+  } finally {
+    sendingFollowUp.value = null
   }
 }
 
@@ -518,6 +558,13 @@ onMounted(async () => {
   text-transform: capitalize;
 }
 
+.days-in-status {
+  font-size: 0.7rem;
+  color: #b07800;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
 .status-pending {
   background: #fff3cd;
   color: #856404;
@@ -580,6 +627,15 @@ onMounted(async () => {
 .btn-action:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.btn-action-follow-up {
+  background: #e8f0fe;
+  color: #1a5fa4;
+}
+
+.btn-action-follow-up:hover:not(:disabled) {
+  background: #d0e2fc;
 }
 
 .btn-action-green {
