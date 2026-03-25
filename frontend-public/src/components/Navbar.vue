@@ -3,7 +3,7 @@
     <div class="top-bar">
       <div class="top-bar-inner">
         <div class="top-bar-left">
-          <span class="top-bar-item">0935-420-9383</span>
+          <span class="top-bar-item">0967-890-7579</span>
           <span class="top-bar-divider">|</span>
           <span class="top-bar-item">info@brighthii.com</span>
         </div>
