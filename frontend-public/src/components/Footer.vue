@@ -40,7 +40,7 @@
         <ul class="contact-list">
           <li>Siayan Proper (Pob.), Siayan</li>
           <li>Zamboanga Del Norte</li>
-          <li>0935-420-9383</li>
+          <li>0967-890-7579</li>
           <li>info@brighthii.com</li>
         </ul>
       </div>
