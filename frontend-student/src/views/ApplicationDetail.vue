@@ -161,10 +161,6 @@
             <span class="detail-label">Employment Type</span>
             <span class="detail-value">{{ enrollment.employmentType }}</span>
           </div>
-          <div class="detail-item" v-if="enrollment.scholarshipPackage">
-            <span class="detail-label">Scholarship Package</span>
-            <span class="detail-value">{{ enrollment.scholarshipPackage }}</span>
-          </div>
           <div class="detail-item">
             <span class="detail-label">Date Applied</span>
             <span class="detail-value">{{ formatDate(enrollment.created_at) }}</span>

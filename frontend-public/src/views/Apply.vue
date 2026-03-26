@@ -384,15 +384,6 @@
           </div>
         </div>
 
-        <!-- Section: Scholarship -->
-        <div class="form-section">
-          <h2>VII. Scholarship</h2>
-          <div class="form-group">
-            <label>Type of Scholarship Package</label>
-            <input v-model="form.scholarshipPackage" type="text" placeholder="e.g., TWSP, PESFA, STEP" />
-          </div>
-        </div>
-
         <!-- Submit Error (non-duplicate) -->
         <div v-if="submitError && !showDuplicateModal" class="submit-error-banner">
           <div class="submit-error-content">
@@ -568,7 +559,6 @@ const form = reactive({
   classificationOther: '',
   course: '',
   privacyConsent: '',
-  scholarshipPackage: '',
 })
 
 // Computed age from birthdate

@@ -412,14 +412,6 @@
             </div>
           </div>
 
-          <!-- Section 7: Scholarship -->
-          <div class="form-section">
-            <h2>VII. Scholarship</h2>
-            <div class="form-group">
-              <label>Type of Scholarship Package</label>
-              <input v-model="formData.scholarshipPackage" type="text" placeholder="e.g., TWSP, PESFA, STEP" :disabled="!editing" />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -753,7 +745,7 @@ const allFormKeys = [
   'educationalAttainment',
   'learnerClassification', 'classificationOther',
   'course',
-  'privacyConsent', 'scholarshipPackage',
+  'privacyConsent',
 ]
 
 const formData = reactive({
@@ -766,7 +758,7 @@ const formData = reactive({
   educationalAttainment: '',
   learnerClassification: [], classificationOther: '',
   course: '',
-  privacyConsent: '', scholarshipPackage: '',
+  privacyConsent: '',
 })
 
 function populateFormData(data) {

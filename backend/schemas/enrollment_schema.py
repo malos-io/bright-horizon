@@ -42,11 +42,6 @@ class EnrollmentApplication(BaseModel):
     # Section 6 - Privacy Consent
     privacyConsent: Optional[str] = ""
 
-    # Section 7 - Scholarship
-    scholarshipVoucher: Optional[str] = ""
-    scholarshipPackage: Optional[str] = ""
-    scholarshipCourse: Optional[str] = ""
-
     @field_validator('firstName', 'lastName')
     @classmethod
     def name_not_empty(cls, v):

@@ -365,12 +365,7 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
         txt2(60, 475, _v(data, "course"))
 
         # ═══════════════════════════════════════════════════════════════
-        # SECTION 8 — SCHOLARSHIP PACKAGE (y ≈ 450)
-        # ═══════════════════════════════════════════════════════════════
-        txt2(60, 435, _v(data, "scholarshipPackage"))
-
-        # ═══════════════════════════════════════════════════════════════
-        # SECTION 9 — PRIVACY CONSENT (y ≈ 355)
+        # SECTION 8 — PRIVACY CONSENT (y ≈ 355)
         # ═══════════════════════════════════════════════════════════════
         consent = _v(data, "privacyConsent")
         # Backward compat: old apps have certificationAgreed
