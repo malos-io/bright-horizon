@@ -74,7 +74,6 @@ sample = {
     "classificationOther": "Solo Parent",
     "course": "Bookkeeping NC III",
     "privacyConsent": "Disagree",
-    "applyScholarship": True,
     "scholarshipPackage": "TWSP",
 }
 

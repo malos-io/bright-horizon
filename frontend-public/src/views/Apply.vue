@@ -388,17 +388,6 @@
         <div class="form-section">
           <h2>VII. Scholarship</h2>
           <div class="form-group">
-            <label>Do you want to apply for a scholarship?</label>
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" v-model="form.applyScholarship" :value="true" /> Yes
-              </label>
-              <label class="radio-label">
-                <input type="radio" v-model="form.applyScholarship" :value="false" /> No
-              </label>
-            </div>
-          </div>
-          <div class="form-group" v-if="form.applyScholarship">
             <label>Type of Scholarship Package</label>
             <input v-model="form.scholarshipPackage" type="text" placeholder="e.g., TWSP, PESFA, STEP" />
           </div>
@@ -579,7 +568,6 @@ const form = reactive({
   classificationOther: '',
   course: '',
   privacyConsent: '',
-  applyScholarship: false,
   scholarshipPackage: '',
 })
 

@@ -43,7 +43,6 @@ class EnrollmentApplication(BaseModel):
     privacyConsent: Optional[str] = ""
 
     # Section 7 - Scholarship
-    applyScholarship: Optional[bool] = False
     scholarshipVoucher: Optional[str] = ""
     scholarshipPackage: Optional[str] = ""
     scholarshipCourse: Optional[str] = ""

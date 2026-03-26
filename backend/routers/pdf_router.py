@@ -367,10 +367,7 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
         # ═══════════════════════════════════════════════════════════════
         # SECTION 8 — SCHOLARSHIP PACKAGE (y ≈ 450)
         # ═══════════════════════════════════════════════════════════════
-        scholarship = _v(data, "scholarshipPackage")
-        if not scholarship and data.get("applyScholarship"):
-            scholarship = "Yes"
-        txt2(60, 435, scholarship)
+        txt2(60, 435, _v(data, "scholarshipPackage"))
 
         # ═══════════════════════════════════════════════════════════════
         # SECTION 9 — PRIVACY CONSENT (y ≈ 355)
