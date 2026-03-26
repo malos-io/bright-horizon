@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["pdf"])
 
-# Path to the blank TESDA MIS 03-01 form template
-TEMPLATE_PATH = Path(__file__).parent.parent / "tesda_files" / "REGISTRATION FORM TESDA.pdf"
+# Path to the TESDA MIS 03-01 (ver. 2021) form template
+TEMPLATE_PATH = Path(__file__).parent.parent / "tesda_files" / "REGISTRATION FORM V2021.pdf"
 
 FONT = "Helvetica-Bold"
 FONT_SIZE = 9
-SMALL_SIZE = 8
+SMALL_SIZE = 7
 
 MONTHS = [
     "January", "February", "March", "April", "May", "June",
@@ -47,14 +47,6 @@ def _compute_age(data: dict) -> str:
         age -= 1
     return str(age) if age >= 0 else ""
 
-# ── Coordinate System ──────────────────────────────────────────────────
-# The template PDF uses transform: 0.75 0 0 -0.75 0 792 cm
-# This means: top-left origin, Y increases downward, 0.75x scale.
-# Virtual canvas = 816 x 1056 (scaled down to 612 x 792 PDF points).
-# Conversion: pdf_x = vx * 0.75,  pdf_y = 792 - vy * 0.75
-SCALE = 0.75
-PAGE_H = 792.0
-
 
 def _v(data: dict, key: str, default: str = "") -> str:
     val = data.get(key, default)
@@ -62,181 +54,242 @@ def _v(data: dict, key: str, default: str = "") -> str:
 
 
 def _short_region(value: str) -> str:
-    """Extract short region name, e.g. 'Region IX (Zamboanga Peninsula)' → 'Region IX'."""
+    """Extract short region name, e.g. 'Region IX (Zamboanga Peninsula)' -> 'Region IX'."""
     if "(" in value:
         return value.split("(")[0].strip()
     return value
 
 
-def build_tesda_pdf(data: dict) -> io.BytesIO:
-    """Overlay applicant data onto the official TESDA form template PDF."""
+# Backward-compat: map old form option values → V2021 option values
+_EDUC_MAP = {
+    "No Grade Completed / Pre-School (Nursery/Kinder/Prep)": "No Grade Completed",
+    "Elementary Level": "Elementary Undergraduate",
+    "High School Level": "High School Undergraduate",
+    "College Level": "College Undergraduate",
+    "College Graduate or Higher": "College Graduate",
+    "Post-Secondary Level/Graduate": "Post-Secondary Non-Tertiary/Technical Vocational Course Graduate",
+}
 
+_EMPLOYMENT_MAP = {
+    "Employed": "Wage-Employed",
+    "Self-employed": "Self-Employed",
+}
+
+_CIVIL_MAP = {
+    "Separated": "Separated/Divorced/Annulled",
+}
+
+# Old classification options → closest V2021 match
+_CLASSIFICATION_MAP = {
+    "Persons with Disabilities (PWDs)": None,  # Section 5 in V2021 (TESDA-only)
+    "Displaced Worker (Local)": "Displaced Workers",
+    "OFW": "Returning/Repatriated Overseas Filipino Workers (OFW)",
+    "OFW Dependent": "Overseas Filipino Workers (OFW) Dependent",
+    "OFW Repatriate": "Returning/Repatriated Overseas Filipino Workers (OFW)",
+    "Victims/Survivors of Human Trafficking": None,  # Not in V2021
+    "Rebel Returnees": "Rebel Returnees/Decommissioned Combatants",
+    "Solo Parent": None,  # Not in V2021
+}
+
+
+def _normalize(data: dict) -> dict:
+    """Normalize old-format field values to V2021 equivalents for PDF overlay."""
+    d = dict(data)
+
+    # Educational attainment
+    educ = d.get("educationalAttainment", "")
+    if educ in _EDUC_MAP:
+        d["educationalAttainment"] = _EDUC_MAP[educ]
+
+    # Employment status
+    emp = d.get("employmentStatus", "")
+    if emp in _EMPLOYMENT_MAP:
+        d["employmentStatus"] = _EMPLOYMENT_MAP[emp]
+
+    # Civil status
+    civil = d.get("civilStatus", "")
+    if civil in _CIVIL_MAP:
+        d["civilStatus"] = _CIVIL_MAP[civil]
+
+    # Classifications
+    old_cls = d.get("learnerClassification", []) or []
+    if old_cls:
+        new_cls = []
+        for item in old_cls:
+            if item in _CLASSIFICATION_MAP:
+                mapped = _CLASSIFICATION_MAP[item]
+                if mapped and mapped not in new_cls:
+                    new_cls.append(mapped)
+            else:
+                if item not in new_cls:
+                    new_cls.append(item)
+        d["learnerClassification"] = new_cls
+
+    # Privacy consent backward compat
+    if not d.get("privacyConsent") and d.get("certificationAgreed"):
+        d["privacyConsent"] = "Agree"
+
+    return d
+
+
+# ── Drawing helpers ──────────────────────────────────────────────────
+# V2021 template uses direct PDF coordinates (origin bottom-left, Y up).
+# Page 1: 592 x 837,  Page 2: 593 x 839
+
+def _make_helpers(c_obj):
+    """Return txt, txtc, chk, chk_match helper functions bound to a canvas."""
+
+    def txt(x, y, value, size=FONT_SIZE, font=FONT):
+        if not value:
+            return
+        c_obj.setFont(font, size)
+        c_obj.drawString(x, y, str(value))
+
+    def txtc(x, y, value, size=FONT_SIZE, font=FONT):
+        if not value:
+            return
+        c_obj.setFont(font, size)
+        c_obj.drawCentredString(x, y, str(value))
+
+    def chk(x, y, checked):
+        if not checked:
+            return
+        px, py = x, y
+        c_obj.saveState()
+        c_obj.setLineWidth(1.5)
+        c_obj.line(px + 2, py + 4, px + 5, py + 1)
+        c_obj.line(px + 5, py + 1, px + 10, py + 9)
+        c_obj.restoreState()
+
+    def chk_match(x, y, value, option):
+        if isinstance(value, list):
+            chk(x, y, option in value)
+        else:
+            chk(x, y, value == option)
+
+    return txt, txtc, chk, chk_match
+
+
+def build_tesda_pdf(data: dict) -> io.BytesIO:
+    """Overlay applicant data onto the official TESDA V2021 form template PDF."""
+
+    data = _normalize(data)
     template = PdfReader(str(TEMPLATE_PATH))
     writer = PdfWriter()
 
-    # ── Page 1 ────────────────────────────────────────────────────────
+    # ── PAGE 1 ─────────────────────────────────────────────────────────
     page1 = template.pages[0]
-    W = float(page1.mediabox.width)
-    H = float(page1.mediabox.height)
+    W1 = float(page1.mediabox.width)   # 592
+    H1 = float(page1.mediabox.height)  # 837
 
     buf1 = io.BytesIO()
-    c = canvas.Canvas(buf1, pagesize=(W, H))
-
-    # ── Helpers (virtual coords → PDF coords) ──
-
-    def txt(vx, vy, value, size=FONT_SIZE, font=FONT):
-        """Draw text at virtual coordinates (template space: top-left, Y-down)."""
-        if not value:
-            return
-        c.setFont(font, size)
-        c.drawString(vx * SCALE, PAGE_H - vy * SCALE, str(value))
-
-    def txtc(vx, vy, value, size=FONT_SIZE, font=FONT):
-        """Draw centered text at virtual coordinates."""
-        if not value:
-            return
-        c.setFont(font, size)
-        c.drawCentredString(vx * SCALE, PAGE_H - vy * SCALE, str(value))
-
-    def chk(vx, vy, checked):
-        """Draw a checkmark at virtual coordinates."""
-        if not checked:
-            return
-        px = vx * SCALE
-        py = PAGE_H - vy * SCALE
-        c.saveState()
-        c.setLineWidth(1.5)
-        c.line(px + 2, py + 4, px + 5, py + 1)
-        c.line(px + 5, py + 1, px + 10, py + 9)
-        c.restoreState()
-
-    def chk_match(vx, vy, value, option):
-        if isinstance(value, list):
-            chk(vx, vy, option in value)
-        else:
-            chk(vx, vy, value == option)
+    c = canvas.Canvas(buf1, pagesize=(W1, H1))
+    txt, txtc, chk, chk_match = _make_helpers(c)
 
     # ═══════════════════════════════════════════════════════════════════
     # SECTION 2 — MANPOWER PROFILE
     # ═══════════════════════════════════════════════════════════════════
-    # Sub-label positions extracted from template (virtual coords):
-    #   "Last Name" vx=297, vy=355 | "First Name" vx=501, vy=355
-    #   "Number, Street" vy=399 | "City/Municipality" vy=439
-    #   "Email Address" vy=477
+    # Column centers:  Col1(Last+Ext)≈230  Col2(First)≈380  Col3(Middle)≈520
 
-    # 2.1 Name — centered in name boxes
-    txtc(300, 340, _v(data, "lastName"))
-    txtc(510, 340, _v(data, "firstName"))
-    txtc(690, 340, _v(data, "middleName"))
+    # 2.1 Name — centered in boxes (y ≈ 565)
+    last = _v(data, "lastName")
+    ext = _v(data, "extensionName")
+    name_combined = f"{last} {ext}".strip() if ext else last
+    txtc(210, 565, name_combined)
+    txtc(385, 565, _v(data, "firstName"))
+    txtc(520, 565, _v(data, "middleName"))
 
-    # 2.2 Address — Row 1: Street, Barangay, District (centered)
-    txtc(300, 382, _v(data, "street"))
-    txtc(510, 382, _v(data, "barangay"))
-    txtc(690, 382, _v(data, "district"))
+    # 2.2 Address — Row 1: Street, Barangay, District (y ≈ 515)
+    txtc(210, 515, _v(data, "street"))
+    txtc(385, 515, _v(data, "barangay"))
+    txtc(520, 515, _v(data, "district"))
 
-    # Address — Row 2: City/Municipality, Province, Region (centered)
-    txtc(300, 422, _v(data, "city"))
-    txtc(510, 422, _v(data, "province"))
-    txtc(690, 422, _short_region(_v(data, "region")))
+    # Address — Row 2: City/Municipality, Province, Region (y ≈ 475)
+    txtc(210, 475, _v(data, "city"))
+    txtc(385, 475, _v(data, "province"))
+    txtc(520, 475, _short_region(_v(data, "region")))
 
-    # Email, Contact No, Nationality (centered)
-    txtc(300, 460, _v(data, "email"), size=SMALL_SIZE)
-    txtc(510, 460, _v(data, "contactNo"))
-    txtc(690, 460, _v(data, "nationality"))
+    # Email/Facebook, Contact No, Nationality (y ≈ 445)
+    email = _v(data, "email")
+    fb = _v(data, "facebookAccount")
+    email_fb = f"{email} / {fb}" if fb else email
+    txtc(210, 445, email_fb, size=SMALL_SIZE)
+    txtc(385, 445, _v(data, "contactNo"))
+    txtc(520, 445, _v(data, "nationality"))
 
     # ═══════════════════════════════════════════════════════════════════
     # SECTION 3 — PERSONAL INFORMATION
     # ═══════════════════════════════════════════════════════════════════
-    # Extracted checkbox label positions:
-    #   "Male" vx=116, vy=554 | "Female" vy=568
-    #   "Single" vx=296, vy=554 | "Married" vy=568 | "Widow/er" vy=581
-    #   "Employed" vx=483, vy=554
-
     sex = _v(data, "sex")
     civil = _v(data, "civilStatus")
     employment = _v(data, "employmentStatus")
+    emp_type = _v(data, "employmentType")
 
-    # 3.1 Sex — checkbox ~20 units left of label text
-    chk_match(90, 552, sex, "Male") # 90, 552 is good
-    chk_match(90, 566, sex, "Female") # 90, 566 is good
+    # 3.1 Sex (checkboxes at x≈33)
+    chk_match(33, 366, sex, "Male")
+    chk_match(33, 355, sex, "Female")
 
-    # 3.2 Civil Status
-    chk_match(270, 552, civil, "Single") #270, 552 is good
-    chk_match(270, 566, civil, "Married") #270, 566 is good
-    chk_match(270, 580, civil, "Widow/er") #270, 580 is good
-    chk_match(270, 594, civil, "Separated") #270, 594 is good
+    # 3.2 Civil Status (checkboxes at x≈126)
+    chk_match(126, 366, civil, "Single")
+    chk_match(126, 355, civil, "Married")
+    chk_match(126, 343, civil, "Separated/Divorced/Annulled")
+    chk_match(126, 331, civil, "Widow/er")
+    chk_match(126, 320, civil, "Common Law/Live-in")
 
-    # 3.3 Employment Status
-    chk_match(458, 552, employment, "Employed") #458, 552 is good
-    chk_match(458, 566, employment, "Unemployed") #458, 566 is good
-    chk_match(458, 580, employment, "Self-employed") #458, 580 is good
+    # 3.3 Employment Status (checkboxes at x≈265)
+    chk_match(265, 356, employment, "Wage-Employed")
+    chk_match(265, 344, employment, "Underemployed")
+    chk_match(265, 309, employment, "Self-Employed")
+    chk_match(265, 298, employment, "Unemployed")
 
-    # 3.4 Birthdate — inside the birth date boxes
-    txtc(240, 645, _v(data, "birthMonth"))
-    txtc(385, 645, _v(data, "birthDay"))
-    txtc(550, 645, _v(data, "birthYear"))
-    txtc(690, 645, _v(data, "age"))
+    # Employment Type — only if Wage-Employed or Underemployed (x≈405 left col, x≈480 right col)
+    chk_match(393, 356, emp_type, "None")
+    chk_match(393, 344, emp_type, "Casual")
+    chk_match(393, 332, emp_type, "Probationary")
+    chk_match(393, 320, emp_type, "Contractual")
+    chk_match(464, 356, emp_type, "Regular")
+    chk_match(464, 344, emp_type, "Job Order")
+    chk_match(464, 332, emp_type, "Permanent")
+    chk_match(464, 320, emp_type, "Temporary")
 
-    # 3.4 Birthplace — inside the birthplace boxes
-    txtc(280, 720, _v(data, "birthplaceCity"))
-    txtc(500, 720, _v(data, "birthplaceProvince"))
-    txtc(680, 720, _short_region(_v(data, "birthplaceRegion")))
+    # 3.4 Birthdate (y ≈ 280)
+    txtc(160, 275, _v(data, "birthMonth"))
+    txtc(290, 275, _v(data, "birthDay"))
+    txtc(410, 275, _v(data, "birthYear"))
+    txtc(520, 275, _v(data, "age"))
+
+    # 3.5 Birthplace (y ≈ 240)
+    txtc(195, 235, _v(data, "birthplaceCity"))
+    txtc(380, 235, _v(data, "birthplaceProvince"))
+    txtc(520, 235 , _short_region(_v(data, "birthplaceRegion")))
 
     # ═══════════════════════════════════════════════════════════════════
-    # SECTION 3.5 — EDUCATIONAL ATTAINMENT
+    # SECTION 3.6 — EDUCATIONAL ATTAINMENT
     # ═══════════════════════════════════════════════════════════════════
-    # Extracted positions: vy range 778-814, two rows of 4 options
-
     educ = _v(data, "educationalAttainment")
 
+
     educ_positions = [
-        # Row 1 — vy ≈ 788 (columns aligned with Row 2)
-        (67, 776, "No Grade Completed / Pre-School (Nursery/Kinder/Prep)"), #67, 776 is good
-        (232, 782, "Elementary Level"), #232, 782 is good
-        (429, 782, "Elementary Graduate"), #429, 782 is good
-        (598, 782, "High School Level"), #598, 782 is good
-        # Row 2 — vy ≈ 812
-        (67, 812, "High School Graduate"),
-        (232, 812, "Post-Secondary Level/Graduate"),
-        (429, 812, "College Level"), #429, 812 is good
-        (598, 812, "College Graduate or Higher"), #598, 812 is good
+        # Column 1
+        (26, 183, "No Grade Completed"),
+        (26, 163, "Elementary Undergraduate"),
+        (26, 148, "Elementary Graduate"),
+        (26, 129, "High School Undergraduate"),
+        (26, 109, "High School Graduate"),
+        # Column 2
+        (175, 183, "Junior High (K-12)"),
+        (175, 163, "Senior High (K-12)"),
+        (175, 148, "Post-Secondary Non-Tertiary/Technical Vocational Course Undergraduate"),
+        (175, 129, "Post-Secondary Non-Tertiary/Technical Vocational Course Graduate"),
+        # Column 3
+        (394, 183, "College Undergraduate"),
+        (394, 163, "College Graduate"),
+        (394, 148, "Masteral"),
+        (394, 129, "Doctorate"),
     ]
 
     for ex, ey, opt in educ_positions:
         chk_match(ex, ey, educ, opt)
-
-    # ═══════════════════════════════════════════════════════════════════
-    # SECTION 4 — LEARNER CLASSIFICATION
-    # ═══════════════════════════════════════════════════════════════════
-    # Extracted: "Persons w/ Disabilities" (114, 880), "Solo Parent" (554, 892)
-    #            "OFW" (115, 939)
-
-    classifications = data.get("learnerClassification", []) or []
-
-    cls_positions = [
-        # Row 1 — vy ≈ 882
-        (90, 878, "Persons with Disabilities (PWDs)"), #90, 878 is good
-        (267, 890, "OFW Repatriate"), #267, 890 is good
-        (530, 890, "Solo Parent"),
-        # Row 2 — vy ≈ 905
-        (90, 914, "Displaced Worker (Local)"), #90, 914 is good
-        (267, 914, "Victims/Survivors of Human Trafficking"), #267, 914 is good
-        (530, 914, "Others"),
-        # Row 3 — vy ≈ 928
-        (90, 938, "OFW"), #90 , 938 is good
-        (267, 938, "Indigenous People & Cultural Communities"), #267, 938 is good
-        # Row 4 — vy ≈ 951
-        (90, 960, "OFW Dependent"), #90, 960 is good
-        (267, 960, "Rebel Returnees"), #267, 960 is good
-    ]
-
-    for cx, cy, opt in cls_positions:
-        chk(cx, cy, opt in classifications)
-
-    # Others specify text
-    other_text = _v(data, "classificationOther")
-    if other_text and "Others" in classifications:
-        txtc(540, 938, other_text, size=SMALL_SIZE)
 
     c.save()
     buf1.seek(0)
@@ -246,44 +299,88 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
     page1.merge_page(overlay1.pages[0])
     writer.add_page(page1)
 
-    # ── Page 2 ────────────────────────────────────────────────────────
-    # Same coordinate transform as page 1
-
+    # ── PAGE 2 ─────────────────────────────────────────────────────────
     if len(template.pages) > 1:
         page2 = template.pages[1]
-        W2 = float(page2.mediabox.width)
-        H2 = float(page2.mediabox.height)
+        W2 = float(page2.mediabox.width)   # 593
+        H2 = float(page2.mediabox.height)  # 839
 
         buf2 = io.BytesIO()
         c2 = canvas.Canvas(buf2, pagesize=(W2, H2))
+        txt2, txtc2, chk2, chk_match2 = _make_helpers(c2)
 
-        def txt2(vx, vy, value, size=FONT_SIZE, font=FONT):
-            if not value:
-                return
-            c2.setFont(font, size)
-            c2.drawString(vx * SCALE, PAGE_H - vy * SCALE, str(value))
+        # ═══════════════════════════════════════════════════════════════
+        # SECTION 4 — LEARNER CLASSIFICATION
+        # ═══════════════════════════════════════════════════════════════
+        classifications = data.get("learnerClassification", []) or []
 
-        def chk2(vx, vy, checked):
-            if not checked:
-                return
-            px = vx * SCALE
-            py = PAGE_H - vy * SCALE
-            c2.saveState()
-            c2.setLineWidth(1.5)
-            c2.line(px + 2, py + 4, px + 5, py + 1)
-            c2.line(px + 5, py + 1, px + 10, py + 9)
-            c2.restoreState()
+        # 3 columns × 8 rows; Col1 x≈47, Col2 x≈225, Col3 x≈415
+        # Row spacing ≈ 22 pts, first row y≈757
+        cls_positions = [
+            # Row 1 (y ≈ 757)
+            (25, 755, "4Ps Beneficiary"),
+            (202, 755, "Agrarian Reform Beneficiary"),
+            (388, 755, "Balik Probinsya"),
+            # Row 2 (y ≈ 735)
+            (25, 735, "Displaced Workers"),
+            (202, 740, "Drug Dependents Surrenderees/Surrenderers"),
+            (388, 740, "Family Members of AFP and PNP Killed-in-Action"),
+            # Row 3 (y ≈ 713)
+            (25, 717, "Family Members of AFP and PNP Wounded-in-Action"),
+            (202, 713, "Farmers and Fishermen"),
+            (388, 713, "Indigenous People & Cultural Communities"),
+            # Row 4 (y ≈ 695)
+            (25, 695, "Industry Workers"),
+            (202, 696, "Inmates and Detainees"),
+            (388, 696, "MILF Beneficiary"),
+            # Row 5 (y ≈ 675)
+            (25, 678, "Out-of-School-Youth"),
+            (202, 682, "Overseas Filipino Workers (OFW) Dependent"),
+            (388, 678, "RCEF-RESP"),
+            # Row 6 (y ≈ 655)
+            (25, 660, "Rebel Returnees/Decommissioned Combatants"),
+            (202, 660, "Returning/Repatriated Overseas Filipino Workers (OFW)"),
+            (388, 656, "Student"),
+            # Row 7 (y ≈ 637)
+            (25, 638, "TESDA Alumni"),
+            (202, 638, "TVET Trainers"),
+            (388, 638, "Uniformed Personnel"),
+            # Row 8 (y ≈ 619)
+            (25, 619, "Victim of Natural Disasters and Calamities"),
+            (202, 619, "Wounded-in-Action AFP & PNP Personnel"),
+            (388, 623, "Others"),
+        ]
 
-        # Section 5 — NCAE/YP4SC
-        # Extracted: "Yes" at (347, 89), question header at (70, 89)
-        ncae_taken = data.get("ncaeTaken", False)
-        chk2(318, 89, ncae_taken)
-        chk2(555, 89, not ncae_taken)
-        txt2(170, 112, _v(data, "ncaeWhere"))
-        txt2(170, 130, _v(data, "ncaeWhen"))
+        for cx, cy, opt in cls_positions:
+            chk2(cx, cy, opt in classifications)
 
-        # Section 6 — Course/Qualification
-        txt2(300, 160, _v(data, "course"))
+        # Others specify text
+        other_text = _v(data, "classificationOther")
+        if other_text and "Others" in classifications:
+            txt2(470, 622, other_text, size=SMALL_SIZE)
+
+        # ═══════════════════════════════════════════════════════════════
+        # SECTION 7 — COURSE / QUALIFICATION (y ≈ 490)
+        # ═══════════════════════════════════════════════════════════════
+        txt2(60, 475, _v(data, "course"))
+
+        # ═══════════════════════════════════════════════════════════════
+        # SECTION 8 — SCHOLARSHIP PACKAGE (y ≈ 450)
+        # ═══════════════════════════════════════════════════════════════
+        scholarship = _v(data, "scholarshipPackage")
+        if not scholarship and data.get("applyScholarship"):
+            scholarship = "Yes"
+        txt2(60, 435, scholarship)
+
+        # ═══════════════════════════════════════════════════════════════
+        # SECTION 9 — PRIVACY CONSENT (y ≈ 355)
+        # ═══════════════════════════════════════════════════════════════
+        consent = _v(data, "privacyConsent")
+        # Backward compat: old apps have certificationAgreed
+        if not consent and data.get("certificationAgreed"):
+            consent = "Agree"
+        chk_match2(197, 351, consent, "Agree")
+        chk_match2(318, 351, consent, "Disagree")
 
         c2.save()
         buf2.seek(0)

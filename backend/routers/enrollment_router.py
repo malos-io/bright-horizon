@@ -1295,7 +1295,7 @@ def upload_applicant_document(
 # Fields applicants may never edit
 _APPLICANT_PROTECTED_FIELDS = {
     "id", "created_at", "updated_at", "changelog", "status",
-    "documents", "email", "course", "certificationAgreed",
+    "documents", "email", "course", "privacyConsent",
 }
 
 

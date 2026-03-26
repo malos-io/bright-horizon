@@ -117,6 +117,10 @@
             <span class="detail-label">Email</span>
             <span class="detail-value">{{ enrollment.email }}</span>
           </div>
+          <div class="detail-item" v-if="enrollment.facebookAccount">
+            <span class="detail-label">Facebook Account</span>
+            <span class="detail-value">{{ enrollment.facebookAccount }}</span>
+          </div>
           <div class="detail-item">
             <span class="detail-label">Contact No.</span>
             <span class="detail-value">{{ enrollment.contactNo || '--' }}</span>
@@ -152,6 +156,14 @@
           <div class="detail-item">
             <span class="detail-label">Employment Status</span>
             <span class="detail-value">{{ enrollment.employmentStatus || '--' }}</span>
+          </div>
+          <div class="detail-item" v-if="enrollment.employmentType">
+            <span class="detail-label">Employment Type</span>
+            <span class="detail-value">{{ enrollment.employmentType }}</span>
+          </div>
+          <div class="detail-item" v-if="enrollment.scholarshipPackage">
+            <span class="detail-label">Scholarship Package</span>
+            <span class="detail-value">{{ enrollment.scholarshipPackage }}</span>
           </div>
           <div class="detail-item">
             <span class="detail-label">Date Applied</span>
@@ -293,7 +305,9 @@ onMounted(async () => {
 
 const fullName = computed(() => {
   const e = enrollment.value
-  return [e.firstName, e.middleName, e.lastName].filter(Boolean).join(' ') || '--'
+  const parts = [e.firstName, e.middleName, e.lastName]
+  if (e.extensionName) parts.push(e.extensionName)
+  return parts.filter(Boolean).join(' ') || '--'
 })
 
 const birthDate = computed(() => {
