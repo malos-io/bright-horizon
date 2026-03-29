@@ -346,6 +346,25 @@
             </div>
           </div>
 
+          <!-- Parent/Guardian Information -->
+          <div class="form-section">
+            <h2>Parent / Guardian Information</h2>
+            <div class="form-row two-col">
+              <div class="form-group">
+                <label>Name of Parent / Guardian</label>
+                <input v-model="formData.parentGuardianName" type="text" :disabled="!editing" />
+              </div>
+              <div class="form-group">
+                <label>Contact No. of Parent / Guardian</label>
+                <input v-model="formData.parentGuardianContact" type="tel" :disabled="!editing" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Complete Address of Parent / Guardian</label>
+              <input v-model="formData.parentGuardianAddress" type="text" :disabled="!editing" />
+            </div>
+          </div>
+
           <!-- Educational Attainment -->
           <div class="form-section">
             <h2>Educational Attainment (Before Training)</h2>
@@ -742,6 +761,7 @@ const allFormKeys = [
   'sex', 'civilStatus', 'employmentStatus', 'employmentType',
   'birthMonth', 'birthDay', 'birthYear',
   'birthplaceCity', 'birthplaceProvince', 'birthplaceRegion',
+  'parentGuardianName', 'parentGuardianContact', 'parentGuardianAddress',
   'educationalAttainment',
   'learnerClassification', 'classificationOther',
   'course',
@@ -755,6 +775,7 @@ const formData = reactive({
   sex: '', civilStatus: '', employmentStatus: '', employmentType: '',
   birthMonth: '', birthDay: '', birthYear: '',
   birthplaceCity: '', birthplaceProvince: '', birthplaceRegion: '',
+  parentGuardianName: '', parentGuardianContact: '', parentGuardianAddress: '',
   educationalAttainment: '',
   learnerClassification: [], classificationOther: '',
   course: '',

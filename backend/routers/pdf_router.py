@@ -264,6 +264,12 @@ def build_tesda_pdf(data: dict) -> io.BytesIO:
     txtc(520, 235 , _short_region(_v(data, "birthplaceRegion")))
 
     # ═══════════════════════════════════════════════════════════════════
+    # PARENT / GUARDIAN INFORMATION
+    # ═══════════════════════════════════════════════════════════════════
+    txtc(200, 70, _v(data, "parentGuardianName"), size=SMALL_SIZE)
+    txtc(450, 70, _v(data, "parentGuardianAddress"), size=SMALL_SIZE)
+
+    # ═══════════════════════════════════════════════════════════════════
     # SECTION 3.6 — EDUCATIONAL ATTAINMENT
     # ═══════════════════════════════════════════════════════════════════
     educ = _v(data, "educationalAttainment")

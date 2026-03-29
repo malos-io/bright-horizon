@@ -44,6 +44,7 @@ sample = {
     "birthplaceRegion": "Region IX",
     "educationalAttainment": "Doctorate",
     "parentGuardianName": "Maria Dela Cruz",
+    "parentGuardianContact": "09181234567",
     "parentGuardianAddress": "123 Rizal St., San Antonio, Zamboanga City",
     "learnerClassification": [
         "4Ps Beneficiary",

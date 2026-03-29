@@ -32,6 +32,11 @@ class EnrollmentApplication(BaseModel):
     birthplaceRegion: Optional[str] = ""
     educationalAttainment: Optional[str] = ""
 
+    # Parent/Guardian Information
+    parentGuardianName: Optional[str] = ""
+    parentGuardianContact: Optional[str] = ""
+    parentGuardianAddress: Optional[str] = ""
+
     # Section 4 - Learner/Trainee/Student (Clients) Classification
     learnerClassification: Optional[List[str]] = []
     classificationOther: Optional[str] = ""

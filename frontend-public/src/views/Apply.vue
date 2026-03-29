@@ -315,6 +315,21 @@
             </div>
           </div>
 
+          <h3 class="sub-heading">Parent / Guardian Information</h3>
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label>Name of Parent / Guardian</label>
+              <input v-model="form.parentGuardianName" type="text" placeholder="Full name" />
+            </div>
+            <div class="form-group">
+              <label>Contact No. of Parent / Guardian</label>
+              <input v-model="form.parentGuardianContact" type="tel" placeholder="Contact number" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Complete Address of Parent / Guardian</label>
+            <input v-model="form.parentGuardianAddress" type="text" placeholder="Complete mailing address" />
+          </div>
 
         </div>
 
@@ -554,6 +569,9 @@ const form = reactive({
   birthplaceCity: '',
   birthplaceProvince: '',
   birthplaceRegion: '',
+  parentGuardianName: '',
+  parentGuardianContact: '',
+  parentGuardianAddress: '',
   educationalAttainment: '',
   learnerClassification: [],
   classificationOther: '',
