@@ -153,10 +153,6 @@
             <span class="detail-label">Parent / Guardian</span>
             <span class="detail-value">{{ enrollment.parentGuardianName }}</span>
           </div>
-          <div class="detail-item" v-if="enrollment.parentGuardianContact">
-            <span class="detail-label">Parent / Guardian Contact</span>
-            <span class="detail-value">{{ enrollment.parentGuardianContact }}</span>
-          </div>
           <div class="detail-item" v-if="enrollment.parentGuardianAddress">
             <span class="detail-label">Parent / Guardian Address</span>
             <span class="detail-value">{{ enrollment.parentGuardianAddress }}</span>

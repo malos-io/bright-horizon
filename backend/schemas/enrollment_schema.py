@@ -34,7 +34,6 @@ class EnrollmentApplication(BaseModel):
 
     # Parent/Guardian Information
     parentGuardianName: Optional[str] = ""
-    parentGuardianContact: Optional[str] = ""
     parentGuardianAddress: Optional[str] = ""
 
     # Section 4 - Learner/Trainee/Student (Clients) Classification
