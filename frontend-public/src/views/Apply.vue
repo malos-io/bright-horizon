@@ -96,10 +96,14 @@
         <!-- Section 2: Manpower Profile -->
         <div class="form-section">
           <h2>II. Manpower Profile</h2>
-          <div class="form-row three-col">
+          <div class="form-row four-col">
             <div class="form-group">
               <label>Last Name <span class="required">*</span></label>
               <input v-model="form.lastName" type="text" required />
+            </div>
+            <div class="form-group">
+              <label>Extension Name</label>
+              <input v-model="form.extensionName" type="text" placeholder="Jr., Sr., III" />
             </div>
             <div class="form-group">
               <label>First Name <span class="required">*</span></label>
@@ -153,11 +157,17 @@
             </div>
           </div>
 
-          <div class="form-row three-col">
+          <div class="form-row two-col">
             <div class="form-group">
               <label>Email Address <span class="required">*</span></label>
               <input v-model="form.email" type="email" required />
             </div>
+            <div class="form-group">
+              <label>Facebook Account</label>
+              <input v-model="form.facebookAccount" type="text" placeholder="Facebook name or profile URL" />
+            </div>
+          </div>
+          <div class="form-row two-col">
             <div class="form-group">
               <label>Contact No. <span class="required">*</span></label>
               <input v-model="form.contactNo" type="tel" required />
@@ -187,7 +197,7 @@
             </div>
             <div class="form-group">
               <label>Civil Status</label>
-              <div class="radio-group">
+              <div class="radio-group wrap">
                 <label class="radio-label">
                   <input type="radio" v-model="form.civilStatus" value="Single" /> Single
                 </label>
@@ -195,27 +205,64 @@
                   <input type="radio" v-model="form.civilStatus" value="Married" /> Married
                 </label>
                 <label class="radio-label">
+                  <input type="radio" v-model="form.civilStatus" value="Separated/Divorced/Annulled" /> Separated/Divorced/Annulled
+                </label>
+                <label class="radio-label">
                   <input type="radio" v-model="form.civilStatus" value="Widow/er" /> Widow/er
                 </label>
                 <label class="radio-label">
-                  <input type="radio" v-model="form.civilStatus" value="Separated" /> Separated
+                  <input type="radio" v-model="form.civilStatus" value="Common Law/Live-in" /> Common Law/Live-in
                 </label>
               </div>
             </div>
           </div>
 
-          <div class="form-group">
-            <label>Employment Status (Before Training)</label>
-            <div class="radio-group wrap">
-              <label class="radio-label">
-                <input type="radio" v-model="form.employmentStatus" value="Employed" /> Employed
-              </label>
-              <label class="radio-label">
-                <input type="radio" v-model="form.employmentStatus" value="Unemployed" /> Unemployed
-              </label>
-              <label class="radio-label">
-                <input type="radio" v-model="form.employmentStatus" value="Self-employed" /> Self-employed
-              </label>
+          <div class="form-row two-col">
+            <div class="form-group">
+              <label>Employment Status (Before Training)</label>
+              <div class="radio-group wrap">
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentStatus" value="Wage-Employed" /> Wage-Employed
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentStatus" value="Underemployed" /> Underemployed
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentStatus" value="Self-Employed" /> Self-Employed
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentStatus" value="Unemployed" /> Unemployed
+                </label>
+              </div>
+            </div>
+            <div class="form-group" v-if="form.employmentStatus === 'Wage-Employed' || form.employmentStatus === 'Underemployed'">
+              <label>Employment Type</label>
+              <div class="radio-group wrap">
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="None" /> None
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Casual" /> Casual
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Probationary" /> Probationary
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Contractual" /> Contractual
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Regular" /> Regular
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Job Order" /> Job Order
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Permanent" /> Permanent
+                </label>
+                <label class="radio-label">
+                  <input type="radio" v-model="form.employmentType" value="Temporary" /> Temporary
+                </label>
+              </div>
             </div>
           </div>
 
@@ -268,6 +315,16 @@
             </div>
           </div>
 
+          <h3 class="sub-heading">Parent / Guardian Information</h3>
+          <div class="form-group">
+            <label>Name of Parent / Guardian</label>
+            <input v-model="form.parentGuardianName" type="text" placeholder="Full name" />
+          </div>
+          <div class="form-group">
+            <label>Complete Address of Parent / Guardian</label>
+            <input v-model="form.parentGuardianAddress" type="text" placeholder="Complete mailing address" />
+          </div>
+
         </div>
 
         <!-- Educational Attainment -->
@@ -305,36 +362,9 @@
           </div>
         </div>
 
-        <!-- Section 5: NCAE / YP4SC -->
+        <!-- Section 5: Course/Qualification -->
         <div class="form-section">
-          <h2>V. Has the Applicant Taken NCAE / YP4SC Before?</h2>
-          <div class="form-row">
-            <div class="form-group">
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input type="radio" v-model="form.ncaeTaken" :value="true" /> Yes
-                </label>
-                <label class="radio-label">
-                  <input type="radio" v-model="form.ncaeTaken" :value="false" /> No
-                </label>
-              </div>
-            </div>
-          </div>
-          <div class="form-row two-col" v-if="form.ncaeTaken">
-            <div class="form-group">
-              <label>Where?</label>
-              <input v-model="form.ncaeWhere" type="text" />
-            </div>
-            <div class="form-group">
-              <label>When?</label>
-              <input v-model="form.ncaeWhen" type="text" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Section 6: Course/Qualification -->
-        <div class="form-section">
-          <h2>VI. Course / Qualification</h2>
+          <h2>V. Course / Qualification</h2>
           <div class="form-group">
             <label>Select Course <span class="required">*</span></label>
             <select v-model="form.course" required class="course-select">
@@ -344,29 +374,22 @@
           </div>
         </div>
 
-        <!-- Section 7: Certification -->
+        <!-- Section 6: Privacy Consent and Disclaimer -->
         <div class="form-section">
-          <h2>VII. Certification</h2>
-          <label class="checkbox-label certification-check">
-            <input type="checkbox" v-model="form.certificationAgreed" required />
-            I hereby certify that the above information is true and correct to the best of my knowledge and belief.
-            I understand that any misrepresentation made herein shall cause the cancellation of my enrollment/registration.
-          </label>
-        </div>
-
-        <!-- Section 8: Scholarship -->
-        <div class="form-section">
-          <h2>VIII. Scholarship</h2>
-          <div class="form-group">
-            <label>Do you want to apply for a scholarship?</label>
-            <div class="radio-group">
-              <label class="radio-label">
-                <input type="radio" v-model="form.applyScholarship" :value="true" /> Yes
-              </label>
-              <label class="radio-label">
-                <input type="radio" v-model="form.applyScholarship" :value="false" /> No
-              </label>
-            </div>
+          <h2>VI. Privacy Consent and Disclaimer</h2>
+          <p class="privacy-text">
+            I hereby attest that I have read and understood the Privacy Notice of TESDA through its website
+            (<a href="https://www.tesda.gov.ph" target="_blank" rel="noopener noreferrer">https://www.tesda.gov.ph</a>)
+            and thereby giving my consent in the processing of my personal information indicated in this Learners Profile.
+            The processing includes scholarships, employment, survey, and all other related TESDA programs that may be beneficial to my qualifications.
+          </p>
+          <div class="radio-group" style="margin-top: 0.75rem;">
+            <label class="radio-label">
+              <input type="radio" v-model="form.privacyConsent" value="Agree" /> Agree
+            </label>
+            <label class="radio-label">
+              <input type="radio" v-model="form.privacyConsent" value="Disagree" /> Disagree
+            </label>
           </div>
         </div>
 
@@ -474,32 +497,52 @@ const currentYear = new Date().getFullYear()
 const years = Array.from({ length: 80 }, (_, i) => currentYear - i)
 
 const educationOptions = [
-  'No Grade Completed / Pre-School (Nursery/Kinder/Prep)',
-  'Elementary Level',
+  'No Grade Completed',
+  'Elementary Undergraduate',
   'Elementary Graduate',
-  'High School Level',
+  'High School Undergraduate',
   'High School Graduate',
-  'College Level',
-  'College Graduate or Higher',
-  'Post-Secondary Level/Graduate',
+  'Junior High (K-12)',
+  'Senior High (K-12)',
+  'Post-Secondary Non-Tertiary/Technical Vocational Course Undergraduate',
+  'Post-Secondary Non-Tertiary/Technical Vocational Course Graduate',
+  'College Undergraduate',
+  'College Graduate',
+  'Masteral',
+  'Doctorate',
 ]
 
 const classificationOptions = [
-  'Persons with Disabilities (PWDs)',
-  'Displaced Worker (Local)',
-  'OFW',
-  'OFW Dependent',
-  'OFW Repatriate',
-  'Victims/Survivors of Human Trafficking',
+  '4Ps Beneficiary',
+  'Agrarian Reform Beneficiary',
+  'Balik Probinsya',
+  'Displaced Workers',
+  'Drug Dependents Surrenderees/Surrenderers',
+  'Family Members of AFP and PNP Killed-in-Action',
+  'Family Members of AFP and PNP Wounded-in-Action',
+  'Farmers and Fishermen',
   'Indigenous People & Cultural Communities',
-  'Rebel Returnees',
-  'Solo Parent',
+  'Industry Workers',
+  'Inmates and Detainees',
+  'MILF Beneficiary',
+  'Out-of-School-Youth',
+  'Overseas Filipino Workers (OFW) Dependent',
+  'RCEF-RESP',
+  'Rebel Returnees/Decommissioned Combatants',
+  'Returning/Repatriated Overseas Filipino Workers (OFW)',
+  'Student',
+  'TESDA Alumni',
+  'TVET Trainers',
+  'Uniformed Personnel',
+  'Victim of Natural Disasters and Calamities',
+  'Wounded-in-Action AFP & PNP Personnel',
 ]
 
 const form = reactive({
   lastName: '',
   firstName: '',
   middleName: '',
+  extensionName: '',
   street: '',
   barangay: '',
   district: '',
@@ -507,26 +550,26 @@ const form = reactive({
   province: '',
   region: '',
   email: '',
+  facebookAccount: '',
   contactNo: '',
   nationality: 'Filipino',
   sex: '',
   civilStatus: '',
   employmentStatus: '',
+  employmentType: '',
   birthMonth: '',
   birthDay: '',
   birthYear: '',
   birthplaceCity: '',
   birthplaceProvince: '',
   birthplaceRegion: '',
+  parentGuardianName: '',
+  parentGuardianAddress: '',
   educationalAttainment: '',
   learnerClassification: [],
   classificationOther: '',
-  ncaeTaken: false,
-  ncaeWhere: '',
-  ncaeWhen: '',
   course: '',
-  certificationAgreed: false,
-  applyScholarship: false,
+  privacyConsent: '',
 })
 
 // Computed age from birthdate
@@ -879,6 +922,10 @@ async function handleSubmit() {
   grid-template-columns: 1fr 1fr 1fr;
 }
 
+.form-row.four-col {
+  grid-template-columns: 1fr auto 1fr 1fr;
+}
+
 .form-row.two-col {
   grid-template-columns: 1fr 1fr;
 }
@@ -971,7 +1018,7 @@ async function handleSubmit() {
 
 .checkbox-group {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.85rem;
   padding: 0.25rem 0;
 }
@@ -1012,9 +1059,21 @@ async function handleSubmit() {
   box-shadow: 0 0 0 3px rgba(26, 95, 164, 0.1);
 }
 
-.certification-check {
-  line-height: 1.6;
+.privacy-text {
   font-size: 0.9rem;
+  color: #444;
+  line-height: 1.7;
+  margin-bottom: 0.5rem;
+}
+
+.privacy-text a {
+  color: #1a5fa4;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.privacy-text a:hover {
+  text-decoration: underline;
 }
 
 .course-select {
@@ -1364,7 +1423,8 @@ async function handleSubmit() {
 @media (max-width: 768px) {
   .form-row,
   .form-row.three-col,
-  .form-row.two-col {
+  .form-row.two-col,
+  .form-row.four-col {
     grid-template-columns: 1fr;
   }
 

@@ -7,6 +7,7 @@ class EnrollmentApplication(BaseModel):
     lastName: str
     firstName: str
     middleName: Optional[str] = ""
+    extensionName: Optional[str] = ""
     street: Optional[str] = ""
     barangay: Optional[str] = ""
     district: Optional[str] = ""
@@ -14,6 +15,7 @@ class EnrollmentApplication(BaseModel):
     province: Optional[str] = ""
     region: Optional[str] = ""
     email: str
+    facebookAccount: Optional[str] = ""
     contactNo: str
     nationality: Optional[str] = "Filipino"
 
@@ -21,6 +23,7 @@ class EnrollmentApplication(BaseModel):
     sex: Optional[str] = ""
     civilStatus: Optional[str] = ""
     employmentStatus: Optional[str] = ""
+    employmentType: Optional[str] = ""
     birthMonth: Optional[str] = ""
     birthDay: Optional[str] = ""
     birthYear: Optional[str] = ""
@@ -29,26 +32,19 @@ class EnrollmentApplication(BaseModel):
     birthplaceRegion: Optional[str] = ""
     educationalAttainment: Optional[str] = ""
 
+    # Parent/Guardian Information
+    parentGuardianName: Optional[str] = ""
+    parentGuardianAddress: Optional[str] = ""
+
     # Section 4 - Learner/Trainee/Student (Clients) Classification
     learnerClassification: Optional[List[str]] = []
     classificationOther: Optional[str] = ""
 
-    # Section 5 - NCAE / YP4SC
-    ncaeTaken: Optional[bool] = False
-    ncaeWhere: Optional[str] = ""
-    ncaeWhen: Optional[str] = ""
-
-    # Section 6 - Course/Qualification
+    # Section 5 - Course/Qualification
     course: str
 
-    # Section 7 - Certification
-    certificationAgreed: Optional[bool] = False
-
-    # Section 8 - Scholarship
-    applyScholarship: Optional[bool] = False
-    scholarshipVoucher: Optional[str] = ""
-    scholarshipPackage: Optional[str] = ""
-    scholarshipCourse: Optional[str] = ""
+    # Section 6 - Privacy Consent
+    privacyConsent: Optional[str] = ""
 
     @field_validator('firstName', 'lastName')
     @classmethod
